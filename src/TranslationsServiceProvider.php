@@ -17,8 +17,12 @@ use Syriable\Translations\Console\Commands\SyncCommand;
 use Syriable\Translations\Console\Commands\ValidateCommand;
 use Syriable\Translations\Contracts\Scanner;
 use Syriable\Translations\Contracts\ValidationRule;
+use Syriable\Translations\Events\TranslationForgotten;
+use Syriable\Translations\Events\TranslationSaved;
+use Syriable\Translations\Events\TranslationsImported;
 use Syriable\Translations\Extraction\AstKeyExtractor;
 use Syriable\Translations\Extraction\Extractor;
+use Syriable\Translations\Listeners\LogActivity;
 use Syriable\Translations\Management\CatalogManager;
 use Syriable\Translations\Management\CatalogTransfer;
 use Syriable\Translations\Storage\FormatRegistry;
@@ -85,6 +89,9 @@ final class TranslationsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->registerMetadataListeners();
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -102,6 +109,23 @@ final class TranslationsServiceProvider extends ServiceProvider
             HealthCommand::class,
             LocalesCommand::class,
         ]);
+    }
+
+    /**
+     * Wire the metadata listeners onto the write events. Skipped entirely when
+     * metadata is disabled so the package runs in pure file mode.
+     */
+    private function registerMetadataListeners(): void
+    {
+        if (config('translations.metadata.enabled', true) !== true) {
+            return;
+        }
+
+        $events = $this->app->make('events');
+
+        foreach ([TranslationSaved::class, TranslationForgotten::class, TranslationsImported::class] as $event) {
+            $events->listen($event, LogActivity::class);
+        }
     }
 
     /**
