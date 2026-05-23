@@ -9,6 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Syriable\Translations\Ai\AiTranslationService;
 use Syriable\Translations\Ai\NullTranslator;
+use Syriable\Translations\Analysis\AnalyticsService;
 use Syriable\Translations\Analysis\HealthAnalyzer;
 use Syriable\Translations\Collaboration\CommentService;
 use Syriable\Translations\Console\Commands\CleanupRevisionsCommand;
@@ -20,6 +21,7 @@ use Syriable\Translations\Console\Commands\ImportCommand;
 use Syriable\Translations\Console\Commands\LocalesCommand;
 use Syriable\Translations\Console\Commands\ReviewCommand;
 use Syriable\Translations\Console\Commands\ScanContextCommand;
+use Syriable\Translations\Console\Commands\StatsCommand;
 use Syriable\Translations\Console\Commands\SyncCommand;
 use Syriable\Translations\Console\Commands\TranslateCommand;
 use Syriable\Translations\Console\Commands\ValidateCommand;
@@ -113,6 +115,11 @@ final class TranslationsServiceProvider extends ServiceProvider
             $app->make('events'),
         ));
 
+        $this->app->singleton(AnalyticsService::class, fn (Application $app): AnalyticsService => new AnalyticsService(
+            $app->make(StorageManager::class),
+            (string) config('translations.locales.source', 'en'),
+        ));
+
         $this->app->singletonIf(Translator::class, fn (): Translator => new NullTranslator);
 
         $this->app->singleton(AiTranslationService::class, fn (Application $app): AiTranslationService => new AiTranslationService(
@@ -158,6 +165,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             DetectHardcodedCommand::class,
             TranslateCommand::class,
             ReviewCommand::class,
+            StatsCommand::class,
         ]);
     }
 
