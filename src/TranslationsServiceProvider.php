@@ -19,6 +19,7 @@ use Syriable\Translations\Contracts\Scanner;
 use Syriable\Translations\Contracts\ValidationRule;
 use Syriable\Translations\Extraction\AstKeyExtractor;
 use Syriable\Translations\Extraction\Extractor;
+use Syriable\Translations\Management\CatalogManager;
 use Syriable\Translations\Management\CatalogTransfer;
 use Syriable\Translations\Storage\FormatRegistry;
 use Syriable\Translations\Storage\Formats\JsonFormat;
@@ -54,6 +55,11 @@ final class TranslationsServiceProvider extends ServiceProvider
             $app->make(FormatRegistry::class),
             $app->make(KeyRouter::class),
             (array) config('translations'),
+        ));
+
+        $this->app->singleton(CatalogManager::class, fn (Application $app): CatalogManager => new CatalogManager(
+            $app->make(StorageManager::class),
+            $app->make('events'),
         ));
 
         $this->app->singleton(Extractor::class, fn (Application $app): Extractor => new Extractor(
