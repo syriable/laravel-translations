@@ -27,6 +27,7 @@ use Syriable\Translations\Events\TranslationSaved;
 use Syriable\Translations\Events\TranslationsImported;
 use Syriable\Translations\Extraction\AstKeyExtractor;
 use Syriable\Translations\Extraction\Extractor;
+use Syriable\Translations\Glossary\GlossaryService;
 use Syriable\Translations\Listeners\LogActivity;
 use Syriable\Translations\Listeners\RecordRevision;
 use Syriable\Translations\Listeners\ValidateOnSave;
@@ -90,6 +91,8 @@ final class TranslationsServiceProvider extends ServiceProvider
             array_values((array) config('translations.extraction.exclude', [])),
             base_path(),
         ));
+
+        $this->app->singleton(GlossaryService::class, fn (): GlossaryService => new GlossaryService);
 
         $this->app->singleton(PluralFormRule::class, fn (): PluralFormRule => new PluralFormRule(
             $this->pluralCounts(),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Syriable\Translations\Extraction\Scanners\BladeScanner;
 use Syriable\Translations\Extraction\Scanners\PhpScanner;
+use Syriable\Translations\Validation\Rules\GlossaryConsistencyRule;
 use Syriable\Translations\Validation\Rules\HtmlTagRule;
 use Syriable\Translations\Validation\Rules\PlaceholderConsistencyRule;
 use Syriable\Translations\Validation\Rules\PluralFormRule;
@@ -140,6 +141,7 @@ return [
             PlaceholderConsistencyRule::class,
             PluralFormRule::class,
             HtmlTagRule::class,
+            GlossaryConsistencyRule::class,
         ],
 
         // The plural form rule validates a translation against the number of
