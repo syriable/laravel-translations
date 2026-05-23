@@ -8,6 +8,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Syriable\Translations\Analysis\HealthAnalyzer;
+use Syriable\Translations\Console\Commands\CleanupRevisionsCommand;
 use Syriable\Translations\Console\Commands\ExportCommand;
 use Syriable\Translations\Console\Commands\ExtractCommand;
 use Syriable\Translations\Console\Commands\HealthCommand;
@@ -109,6 +110,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             ValidateCommand::class,
             HealthCommand::class,
             LocalesCommand::class,
+            CleanupRevisionsCommand::class,
         ]);
     }
 
