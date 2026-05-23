@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Syriable\Translations\Domain\ExtractedKey;
 use Syriable\Translations\Domain\Locale;
-use Syriable\Translations\Domain\LocaleCatalog;
 use Syriable\Translations\Domain\TranslationKey;
 use Syriable\Translations\Extraction\ExtractionResult;
 use Syriable\Translations\Management\Synchronizer;

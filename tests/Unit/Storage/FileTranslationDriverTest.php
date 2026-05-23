@@ -5,9 +5,9 @@ declare(strict_types=1);
 use Illuminate\Filesystem\Filesystem;
 use Syriable\Translations\Domain\Locale;
 use Syriable\Translations\Storage\Drivers\FileTranslationDriver;
+use Syriable\Translations\Storage\FormatRegistry;
 use Syriable\Translations\Storage\Formats\JsonFormat;
 use Syriable\Translations\Storage\Formats\PhpArrayFormat;
-use Syriable\Translations\Storage\FormatRegistry;
 use Syriable\Translations\Support\KeyRouter;
 
 function makeDriver(string $path): FileTranslationDriver
