@@ -191,6 +191,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Review Workflow
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, every edited or AI-translated value (in a non-source locale)
+    | is flagged for review and must be approved by a reviewer. Review state is
+    | tracked per locale + key; the translated values themselves still live in
+    | lang files. Use `translations:review --strict` as a CI gate.
+    |
+    */
+
+    'workflow' => [
+        'enabled' => env('TRANSLATIONS_WORKFLOW', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Metadata
     |--------------------------------------------------------------------------
     |

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Syriable\Translations\Listeners;
 
+use Syriable\Translations\Events\TranslationApproved;
 use Syriable\Translations\Events\TranslationForgotten;
+use Syriable\Translations\Events\TranslationRejected;
 use Syriable\Translations\Events\TranslationSaved;
 use Syriable\Translations\Events\TranslationsImported;
 use Syriable\Translations\Models\ActivityLog;
@@ -15,7 +17,7 @@ use Syriable\Translations\Models\ActivityLog;
  */
 final class LogActivity
 {
-    public function handle(TranslationSaved|TranslationForgotten|TranslationsImported $event): void
+    public function handle(TranslationSaved|TranslationForgotten|TranslationsImported|TranslationApproved|TranslationRejected $event): void
     {
         if (config('translations.metadata.enabled', true) !== true) {
             return;
@@ -27,7 +29,7 @@ final class LogActivity
                 $event->created ? 'translation.created' : 'translation.updated',
                 $event->locale,
                 $event->key,
-                ['previous' => $event->previousValue, 'value' => $event->value],
+                ['previous' => $event->previousValue, 'value' => $event->value, 'origin' => $event->origin],
             ),
             $event instanceof TranslationForgotten => $this->record(
                 $event->actor,
@@ -42,6 +44,20 @@ final class LogActivity
                 null,
                 null,
                 ['locales' => $event->locales, 'driver' => $event->driver],
+            ),
+            $event instanceof TranslationApproved => $this->record(
+                $event->actor,
+                'translation.approved',
+                $event->locale,
+                $event->key,
+                [],
+            ),
+            $event instanceof TranslationRejected => $this->record(
+                $event->actor,
+                'translation.rejected',
+                $event->locale,
+                $event->key,
+                ['feedback' => $event->feedback],
             ),
         };
     }

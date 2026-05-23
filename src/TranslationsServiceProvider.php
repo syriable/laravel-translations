@@ -17,6 +17,7 @@ use Syriable\Translations\Console\Commands\ExtractCommand;
 use Syriable\Translations\Console\Commands\HealthCommand;
 use Syriable\Translations\Console\Commands\ImportCommand;
 use Syriable\Translations\Console\Commands\LocalesCommand;
+use Syriable\Translations\Console\Commands\ReviewCommand;
 use Syriable\Translations\Console\Commands\ScanContextCommand;
 use Syriable\Translations\Console\Commands\SyncCommand;
 use Syriable\Translations\Console\Commands\TranslateCommand;
@@ -26,12 +27,15 @@ use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Contracts\ValidationRule;
 use Syriable\Translations\Detection\HardcodedStringDetector;
 use Syriable\Translations\Detection\Scanners\BladeHardcodedScanner;
+use Syriable\Translations\Events\TranslationApproved;
 use Syriable\Translations\Events\TranslationForgotten;
+use Syriable\Translations\Events\TranslationRejected;
 use Syriable\Translations\Events\TranslationSaved;
 use Syriable\Translations\Events\TranslationsImported;
 use Syriable\Translations\Extraction\AstKeyExtractor;
 use Syriable\Translations\Extraction\Extractor;
 use Syriable\Translations\Glossary\GlossaryService;
+use Syriable\Translations\Listeners\FlagForReview;
 use Syriable\Translations\Listeners\LogActivity;
 use Syriable\Translations\Listeners\RecordRevision;
 use Syriable\Translations\Listeners\ValidateOnSave;
@@ -45,6 +49,7 @@ use Syriable\Translations\Support\FileFinder;
 use Syriable\Translations\Support\KeyRouter;
 use Syriable\Translations\Validation\Rules\PluralFormRule;
 use Syriable\Translations\Validation\ValidationPipeline;
+use Syriable\Translations\Workflow\WorkflowService;
 
 final class TranslationsServiceProvider extends ServiceProvider
 {
@@ -98,6 +103,10 @@ final class TranslationsServiceProvider extends ServiceProvider
 
         $this->app->singleton(GlossaryService::class, fn (): GlossaryService => new GlossaryService);
 
+        $this->app->singleton(WorkflowService::class, fn (Application $app): WorkflowService => new WorkflowService(
+            $app->make('events'),
+        ));
+
         $this->app->singletonIf(Translator::class, fn (): Translator => new NullTranslator);
 
         $this->app->singleton(AiTranslationService::class, fn (Application $app): AiTranslationService => new AiTranslationService(
@@ -142,6 +151,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             ScanContextCommand::class,
             DetectHardcodedCommand::class,
             TranslateCommand::class,
+            ReviewCommand::class,
         ]);
     }
 
@@ -158,9 +168,11 @@ final class TranslationsServiceProvider extends ServiceProvider
         $events = $this->app->make('events');
 
         $listeners = [
-            TranslationSaved::class => [LogActivity::class, RecordRevision::class, ValidateOnSave::class],
+            TranslationSaved::class => [LogActivity::class, RecordRevision::class, ValidateOnSave::class, FlagForReview::class],
             TranslationForgotten::class => [LogActivity::class, RecordRevision::class],
             TranslationsImported::class => [LogActivity::class],
+            TranslationApproved::class => [LogActivity::class],
+            TranslationRejected::class => [LogActivity::class],
         ];
 
         foreach ($listeners as $event => $handlers) {

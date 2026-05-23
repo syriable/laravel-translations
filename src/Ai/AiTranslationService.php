@@ -58,7 +58,7 @@ final class AiTranslationService
         );
 
         foreach ($translated as $key => $value) {
-            $this->catalog->set($targetLocale, $key, $value);
+            $this->catalog->set($targetLocale, $key, $value, origin: 'ai');
         }
 
         $this->logUsage($sourceLocale, $targetLocale, $pending, $translated);

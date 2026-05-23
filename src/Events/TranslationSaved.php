@@ -17,5 +17,6 @@ final readonly class TranslationSaved
         public ?string $value,
         public bool $created,
         public ?string $actor = null,
+        public string $origin = 'manual',
     ) {}
 }
