@@ -6,6 +6,7 @@ namespace Syriable\Translations\Validation;
 
 use Syriable\Translations\Contracts\ValidationRule;
 use Syriable\Translations\Domain\Catalog;
+use Syriable\Translations\Domain\Locale;
 use Syriable\Translations\Domain\LocaleCatalog;
 use Syriable\Translations\Domain\Translation;
 
@@ -45,6 +46,26 @@ final class ValidationPipeline
     }
 
     /**
+     * Validate a single translation value against its source value. Returns an
+     * empty report for the source locale or when either value is missing.
+     */
+    public function validateKey(string $locale, string $key, ?string $sourceValue, ?string $targetValue): ValidationReport
+    {
+        if ($locale === $this->sourceLocale) {
+            return new ValidationReport;
+        }
+
+        $source = new Translation($key, $sourceValue);
+        $target = new Translation($key, $targetValue);
+
+        if ($source->isMissing() || $target->isMissing()) {
+            return new ValidationReport;
+        }
+
+        return new ValidationReport($this->runRules($source, $target, new Locale($locale)));
+    }
+
+    /**
      * @return list<Issue>
      */
     private function validateLocale(LocaleCatalog $source, LocaleCatalog $target): array
@@ -64,9 +85,21 @@ final class ValidationPipeline
                 continue;
             }
 
-            foreach ($this->rules as $rule) {
-                $issues = [...$issues, ...$rule->validate($sourceTranslation, $targetTranslation, $target->locale)];
-            }
+            $issues = [...$issues, ...$this->runRules($sourceTranslation, $targetTranslation, $target->locale)];
+        }
+
+        return $issues;
+    }
+
+    /**
+     * @return list<Issue>
+     */
+    private function runRules(Translation $source, Translation $target, Locale $locale): array
+    {
+        $issues = [];
+
+        foreach ($this->rules as $rule) {
+            $issues = [...$issues, ...$rule->validate($source, $target, $locale)];
         }
 
         return $issues;

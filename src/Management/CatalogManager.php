@@ -42,7 +42,7 @@ final class CatalogManager
     /**
      * Create or update a single translation value and persist it to storage.
      */
-    public function set(string $locale, string $key, ?string $value, ?string $driver = null): void
+    public function set(string $locale, string $key, ?string $value, ?string $driver = null, string $origin = 'manual'): void
     {
         $store = $this->storage->driver($driver);
         $catalog = $store->read(new Locale($locale));
@@ -64,6 +64,7 @@ final class CatalogManager
             $value,
             $created,
             Actor::current(),
+            $origin,
         ));
     }
 

@@ -2,12 +2,9 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Syriable\Translations\Domain\Enums\RevisionType;
 use Syriable\Translations\Models\TranslationRevision;
-
-uses(RefreshDatabase::class);
 
 function makeRevision(string $key, Carbon $createdAt): void
 {

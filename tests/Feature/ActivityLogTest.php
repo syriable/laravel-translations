@@ -3,12 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Syriable\Translations\Management\CatalogManager;
 use Syriable\Translations\Models\ActivityLog;
 use Syriable\Translations\Support\Actor;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->langDir = sys_get_temp_dir().'/syriable-activity-'.uniqid();

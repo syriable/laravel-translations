@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Syriable\Translations\Extraction\Scanners\BladeScanner;
 use Syriable\Translations\Extraction\Scanners\PhpScanner;
+use Syriable\Translations\Validation\Rules\GlossaryConsistencyRule;
 use Syriable\Translations\Validation\Rules\HtmlTagRule;
 use Syriable\Translations\Validation\Rules\PlaceholderConsistencyRule;
 use Syriable\Translations\Validation\Rules\PluralFormRule;
@@ -140,6 +141,7 @@ return [
             PlaceholderConsistencyRule::class,
             PluralFormRule::class,
             HtmlTagRule::class,
+            GlossaryConsistencyRule::class,
         ],
 
         // The plural form rule validates a translation against the number of
@@ -169,6 +171,38 @@ return [
         'ignore' => [
             // 'validation.*',
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Translation
+    |--------------------------------------------------------------------------
+    |
+    | Optional machine translation of missing values. Bind your own
+    | Syriable\Translations\Contracts\Translator implementation (e.g. backed by
+    | laravel/ai or Prism) in a service provider, then enable it here. The
+    | package ships a null translator, so this stays inert until configured.
+    |
+    */
+
+    'ai' => [
+        'enabled' => env('TRANSLATIONS_AI', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Review Workflow
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, every edited or AI-translated value (in a non-source locale)
+    | is flagged for review and must be approved by a reviewer. Review state is
+    | tracked per locale + key; the translated values themselves still live in
+    | lang files. Use `translations:review --strict` as a CI gate.
+    |
+    */
+
+    'workflow' => [
+        'enabled' => env('TRANSLATIONS_WORKFLOW', false),
     ],
 
     /*
