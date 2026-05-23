@@ -25,6 +25,7 @@ use Syriable\Translations\Extraction\AstKeyExtractor;
 use Syriable\Translations\Extraction\Extractor;
 use Syriable\Translations\Listeners\LogActivity;
 use Syriable\Translations\Listeners\RecordRevision;
+use Syriable\Translations\Listeners\ValidateOnSave;
 use Syriable\Translations\Management\CatalogManager;
 use Syriable\Translations\Management\CatalogTransfer;
 use Syriable\Translations\Storage\FormatRegistry;
@@ -127,7 +128,7 @@ final class TranslationsServiceProvider extends ServiceProvider
         $events = $this->app->make('events');
 
         $listeners = [
-            TranslationSaved::class => [LogActivity::class, RecordRevision::class],
+            TranslationSaved::class => [LogActivity::class, RecordRevision::class, ValidateOnSave::class],
             TranslationForgotten::class => [LogActivity::class, RecordRevision::class],
             TranslationsImported::class => [LogActivity::class],
         ];
