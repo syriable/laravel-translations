@@ -187,6 +187,12 @@ return [
     'metadata' => [
         'enabled' => env('TRANSLATIONS_METADATA', true),
         'connection' => env('TRANSLATIONS_DB_CONNECTION'),
+
+        'revisions' => [
+            // Revisions older than this many days are removed by
+            // `translations:revisions:cleanup`. Set to 0 to keep them forever.
+            'prune_after_days' => 90,
+        ],
     ],
 
 ];

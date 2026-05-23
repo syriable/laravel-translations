@@ -8,6 +8,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Syriable\Translations\Analysis\HealthAnalyzer;
+use Syriable\Translations\Console\Commands\CleanupRevisionsCommand;
 use Syriable\Translations\Console\Commands\ExportCommand;
 use Syriable\Translations\Console\Commands\ExtractCommand;
 use Syriable\Translations\Console\Commands\HealthCommand;
@@ -23,6 +24,7 @@ use Syriable\Translations\Events\TranslationsImported;
 use Syriable\Translations\Extraction\AstKeyExtractor;
 use Syriable\Translations\Extraction\Extractor;
 use Syriable\Translations\Listeners\LogActivity;
+use Syriable\Translations\Listeners\RecordRevision;
 use Syriable\Translations\Management\CatalogManager;
 use Syriable\Translations\Management\CatalogTransfer;
 use Syriable\Translations\Storage\FormatRegistry;
@@ -108,6 +110,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             ValidateCommand::class,
             HealthCommand::class,
             LocalesCommand::class,
+            CleanupRevisionsCommand::class,
         ]);
     }
 
@@ -123,8 +126,16 @@ final class TranslationsServiceProvider extends ServiceProvider
 
         $events = $this->app->make('events');
 
-        foreach ([TranslationSaved::class, TranslationForgotten::class, TranslationsImported::class] as $event) {
-            $events->listen($event, LogActivity::class);
+        $listeners = [
+            TranslationSaved::class => [LogActivity::class, RecordRevision::class],
+            TranslationForgotten::class => [LogActivity::class, RecordRevision::class],
+            TranslationsImported::class => [LogActivity::class],
+        ];
+
+        foreach ($listeners as $event => $handlers) {
+            foreach ($handlers as $handler) {
+                $events->listen($event, $handler);
+            }
         }
     }
 
