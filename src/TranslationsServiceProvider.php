@@ -14,6 +14,7 @@ use Syriable\Translations\Console\Commands\ExtractCommand;
 use Syriable\Translations\Console\Commands\HealthCommand;
 use Syriable\Translations\Console\Commands\ImportCommand;
 use Syriable\Translations\Console\Commands\LocalesCommand;
+use Syriable\Translations\Console\Commands\ScanContextCommand;
 use Syriable\Translations\Console\Commands\SyncCommand;
 use Syriable\Translations\Console\Commands\ValidateCommand;
 use Syriable\Translations\Contracts\Scanner;
@@ -112,6 +113,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             HealthCommand::class,
             LocalesCommand::class,
             CleanupRevisionsCommand::class,
+            ScanContextCommand::class,
         ]);
     }
 
