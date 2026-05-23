@@ -40,6 +40,81 @@ it('does not execute code when parsing a php file', function () {
     expect($entries)->toBe(['a' => 'b']);
 });
 
+it('keeps valid keys when some values are not constant expressions', function () {
+    $entries = (new PhpArrayFormat)->parse(<<<'PHP'
+        <?php
+
+        return [
+            'welcome' => 'Hi',
+            'dynamic' => trans('other.key'),
+            'runtime' => 'prefix-'.$suffix,
+            'constant' => 'foo'.'bar',
+            'goodbye' => 'Bye',
+        ];
+        PHP);
+
+    expect($entries)->toBe([
+        'welcome' => 'Hi',
+        'constant' => 'foobar',
+        'goodbye' => 'Bye',
+    ]);
+});
+
+it('preserves valid entries inside nested arrays with mixed values', function () {
+    $entries = (new PhpArrayFormat)->parse(<<<'PHP'
+        <?php
+
+        return [
+            'group' => [
+                'ok' => 'Yes',
+                'bad' => strtoupper('no'),
+                'deep' => [
+                    'kept' => 'Value',
+                    'dropped' => config('app.name'),
+                ],
+            ],
+            'top' => 'Level',
+        ];
+        PHP);
+
+    expect($entries)->toBe([
+        'group.ok' => 'Yes',
+        'group.deep.kept' => 'Value',
+        'top' => 'Level',
+    ]);
+});
+
+it('returns an empty array when every value is non-constant', function () {
+    $entries = (new PhpArrayFormat)->parse(<<<'PHP'
+        <?php
+
+        return [
+            'a' => fn () => 'x',
+            'b' => $value,
+        ];
+        PHP);
+
+    expect($entries)->toBe([]);
+});
+
+it('evaluates constant scalar expressions in values', function () {
+    $entries = (new PhpArrayFormat)->parse(<<<'PHP'
+        <?php
+
+        return [
+            'count' => 1 + 2,
+            'flag' => true,
+            'joined' => 'a'.'b'.'c',
+        ];
+        PHP);
+
+    expect($entries)->toBe([
+        'count' => '3',
+        'flag' => '1',
+        'joined' => 'abc',
+    ]);
+});
+
 it('parses and dumps json keeping keys verbatim', function () {
     $format = new JsonFormat;
     $entries = $format->parse('{"Save changes": "Save changes"}');
