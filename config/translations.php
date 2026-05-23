@@ -141,6 +141,17 @@ return [
             PluralFormRule::class,
             HtmlTagRule::class,
         ],
+
+        // The plural form rule validates a translation against the number of
+        // plural forms its own language uses (English 2, Polish 3, Arabic 6,
+        // and so on). Built-in CLDR-based counts cover the common languages;
+        // list a locale here to override or add one. Unknown languages are
+        // skipped rather than flagged.
+        'plural' => [
+            'counts' => [
+                // 'ar' => 6,
+            ],
+        ],
     ],
 
     /*

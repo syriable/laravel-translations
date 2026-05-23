@@ -26,6 +26,7 @@ use Syriable\Translations\Storage\Formats\PhpArrayFormat;
 use Syriable\Translations\Storage\StorageManager;
 use Syriable\Translations\Support\FileFinder;
 use Syriable\Translations\Support\KeyRouter;
+use Syriable\Translations\Validation\Rules\PluralFormRule;
 use Syriable\Translations\Validation\ValidationPipeline;
 
 final class TranslationsServiceProvider extends ServiceProvider
@@ -66,6 +67,10 @@ final class TranslationsServiceProvider extends ServiceProvider
             array_values((array) config('translations.analysis.ignore', [])),
         ));
 
+        $this->app->singleton(PluralFormRule::class, fn (): PluralFormRule => new PluralFormRule(
+            $this->pluralCounts(),
+        ));
+
         $this->app->singleton(ValidationPipeline::class, fn (Application $app): ValidationPipeline => new ValidationPipeline(
             $this->resolveInstances((array) config('translations.validation.rules', []), ValidationRule::class),
             (string) config('translations.locales.source', 'en'),
@@ -104,6 +109,24 @@ final class TranslationsServiceProvider extends ServiceProvider
         ));
 
         return $functions !== [] ? $functions : ['__', 'trans', 'trans_choice'];
+    }
+
+    /**
+     * Per-locale plural form counts that override the built-in defaults.
+     *
+     * @return array<string, int>
+     */
+    private function pluralCounts(): array
+    {
+        $counts = [];
+
+        foreach ((array) config('translations.validation.plural.counts', []) as $locale => $count) {
+            if (is_string($locale) && is_numeric($count)) {
+                $counts[$locale] = (int) $count;
+            }
+        }
+
+        return $counts;
     }
 
     /**
