@@ -9,6 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Syriable\Translations\Analysis\HealthAnalyzer;
 use Syriable\Translations\Console\Commands\CleanupRevisionsCommand;
+use Syriable\Translations\Console\Commands\DetectHardcodedCommand;
 use Syriable\Translations\Console\Commands\ExportCommand;
 use Syriable\Translations\Console\Commands\ExtractCommand;
 use Syriable\Translations\Console\Commands\HealthCommand;
@@ -19,6 +20,8 @@ use Syriable\Translations\Console\Commands\SyncCommand;
 use Syriable\Translations\Console\Commands\ValidateCommand;
 use Syriable\Translations\Contracts\Scanner;
 use Syriable\Translations\Contracts\ValidationRule;
+use Syriable\Translations\Detection\HardcodedStringDetector;
+use Syriable\Translations\Detection\Scanners\BladeHardcodedScanner;
 use Syriable\Translations\Events\TranslationForgotten;
 use Syriable\Translations\Events\TranslationSaved;
 use Syriable\Translations\Events\TranslationsImported;
@@ -81,6 +84,13 @@ final class TranslationsServiceProvider extends ServiceProvider
             array_values((array) config('translations.analysis.ignore', [])),
         ));
 
+        $this->app->singleton(HardcodedStringDetector::class, fn (Application $app): HardcodedStringDetector => new HardcodedStringDetector(
+            $app->make(FileFinder::class),
+            [new BladeHardcodedScanner],
+            array_values((array) config('translations.extraction.exclude', [])),
+            base_path(),
+        ));
+
         $this->app->singleton(PluralFormRule::class, fn (): PluralFormRule => new PluralFormRule(
             $this->pluralCounts(),
         ));
@@ -114,6 +124,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             LocalesCommand::class,
             CleanupRevisionsCommand::class,
             ScanContextCommand::class,
+            DetectHardcodedCommand::class,
         ]);
     }
 
