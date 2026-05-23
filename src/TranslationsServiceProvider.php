@@ -7,6 +7,8 @@ namespace Syriable\Translations;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
+use Syriable\Translations\Ai\AiTranslationService;
+use Syriable\Translations\Ai\NullTranslator;
 use Syriable\Translations\Analysis\HealthAnalyzer;
 use Syriable\Translations\Console\Commands\CleanupRevisionsCommand;
 use Syriable\Translations\Console\Commands\DetectHardcodedCommand;
@@ -17,8 +19,10 @@ use Syriable\Translations\Console\Commands\ImportCommand;
 use Syriable\Translations\Console\Commands\LocalesCommand;
 use Syriable\Translations\Console\Commands\ScanContextCommand;
 use Syriable\Translations\Console\Commands\SyncCommand;
+use Syriable\Translations\Console\Commands\TranslateCommand;
 use Syriable\Translations\Console\Commands\ValidateCommand;
 use Syriable\Translations\Contracts\Scanner;
+use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Contracts\ValidationRule;
 use Syriable\Translations\Detection\HardcodedStringDetector;
 use Syriable\Translations\Detection\Scanners\BladeHardcodedScanner;
@@ -94,6 +98,15 @@ final class TranslationsServiceProvider extends ServiceProvider
 
         $this->app->singleton(GlossaryService::class, fn (): GlossaryService => new GlossaryService);
 
+        $this->app->singletonIf(Translator::class, fn (): Translator => new NullTranslator);
+
+        $this->app->singleton(AiTranslationService::class, fn (Application $app): AiTranslationService => new AiTranslationService(
+            $app->make(Translator::class),
+            $app->make(GlossaryService::class),
+            $app->make(CatalogManager::class),
+            $app->make(StorageManager::class),
+        ));
+
         $this->app->singleton(PluralFormRule::class, fn (): PluralFormRule => new PluralFormRule(
             $this->pluralCounts(),
         ));
@@ -128,6 +141,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             CleanupRevisionsCommand::class,
             ScanContextCommand::class,
             DetectHardcodedCommand::class,
+            TranslateCommand::class,
         ]);
     }
 

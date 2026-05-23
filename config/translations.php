@@ -175,6 +175,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | AI Translation
+    |--------------------------------------------------------------------------
+    |
+    | Optional machine translation of missing values. Bind your own
+    | Syriable\Translations\Contracts\Translator implementation (e.g. backed by
+    | laravel/ai or Prism) in a service provider, then enable it here. The
+    | package ships a null translator, so this stays inert until configured.
+    |
+    */
+
+    'ai' => [
+        'enabled' => env('TRANSLATIONS_AI', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Metadata
     |--------------------------------------------------------------------------
     |
