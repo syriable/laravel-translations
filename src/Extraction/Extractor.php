@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Syriable\Translations\Extraction;
 
 use Syriable\Translations\Contracts\Scanner;
+use Syriable\Translations\Domain\ExtractedKey;
 use Syriable\Translations\Support\FileFinder;
 
 /**

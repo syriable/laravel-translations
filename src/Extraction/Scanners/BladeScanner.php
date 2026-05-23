@@ -12,8 +12,8 @@ use Syriable\Translations\Extraction\AstKeyExtractor;
  *
  * Rather than parsing Blade with regular expressions, the template is rewritten
  * into an equivalent PHP template (preserving line positions) and handed to the
- * same AST extractor used for PHP. Echoes, raw echoes, @php blocks and the
- * @lang / @choice directives are all understood.
+ * same AST extractor used for PHP. Echoes, raw echoes, php blocks and the
+ * lang/choice directives are all understood.
  */
 final readonly class BladeScanner implements Scanner
 {

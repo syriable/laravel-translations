@@ -5,6 +5,4 @@ parameters:
     level: 6
     paths:
         - src
-        - config
     tmpDir: build/phpstan
-    checkMissingIterableValueType: false

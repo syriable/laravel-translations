@@ -26,6 +26,6 @@ final class Placeholders
         $all = array_unique([...$colon[0], ...$normalizedBraces]);
         sort($all);
 
-        return array_values($all);
+        return $all;
     }
 }
