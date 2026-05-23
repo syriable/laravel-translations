@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Syriable\Translations\Ai\AiTranslationService;
 use Syriable\Translations\Ai\NullTranslator;
 use Syriable\Translations\Analysis\HealthAnalyzer;
+use Syriable\Translations\Collaboration\CommentService;
 use Syriable\Translations\Console\Commands\CleanupRevisionsCommand;
 use Syriable\Translations\Console\Commands\DetectHardcodedCommand;
 use Syriable\Translations\Console\Commands\ExportCommand;
@@ -27,6 +28,7 @@ use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Contracts\ValidationRule;
 use Syriable\Translations\Detection\HardcodedStringDetector;
 use Syriable\Translations\Detection\Scanners\BladeHardcodedScanner;
+use Syriable\Translations\Events\CommentPosted;
 use Syriable\Translations\Events\TranslationApproved;
 use Syriable\Translations\Events\TranslationForgotten;
 use Syriable\Translations\Events\TranslationRejected;
@@ -107,6 +109,10 @@ final class TranslationsServiceProvider extends ServiceProvider
             $app->make('events'),
         ));
 
+        $this->app->singleton(CommentService::class, fn (Application $app): CommentService => new CommentService(
+            $app->make('events'),
+        ));
+
         $this->app->singletonIf(Translator::class, fn (): Translator => new NullTranslator);
 
         $this->app->singleton(AiTranslationService::class, fn (Application $app): AiTranslationService => new AiTranslationService(
@@ -173,6 +179,7 @@ final class TranslationsServiceProvider extends ServiceProvider
             TranslationsImported::class => [LogActivity::class],
             TranslationApproved::class => [LogActivity::class],
             TranslationRejected::class => [LogActivity::class],
+            CommentPosted::class => [LogActivity::class],
         ];
 
         foreach ($listeners as $event => $handlers) {

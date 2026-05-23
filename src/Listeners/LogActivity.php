@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Syriable\Translations\Listeners;
 
+use Syriable\Translations\Events\CommentPosted;
 use Syriable\Translations\Events\TranslationApproved;
 use Syriable\Translations\Events\TranslationForgotten;
 use Syriable\Translations\Events\TranslationRejected;
@@ -17,7 +18,7 @@ use Syriable\Translations\Models\ActivityLog;
  */
 final class LogActivity
 {
-    public function handle(TranslationSaved|TranslationForgotten|TranslationsImported|TranslationApproved|TranslationRejected $event): void
+    public function handle(TranslationSaved|TranslationForgotten|TranslationsImported|TranslationApproved|TranslationRejected|CommentPosted $event): void
     {
         if (config('translations.metadata.enabled', true) !== true) {
             return;
@@ -58,6 +59,13 @@ final class LogActivity
                 $event->locale,
                 $event->key,
                 ['feedback' => $event->feedback],
+            ),
+            $event instanceof CommentPosted => $this->record(
+                $event->actor,
+                'comment.posted',
+                $event->locale,
+                $event->key,
+                [],
             ),
         };
     }
