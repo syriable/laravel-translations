@@ -42,7 +42,7 @@ Publish the configuration:
 php artisan vendor:publish --tag=translations-config
 ```
 
-**Requirements:** PHP 8.3+ and Laravel 11 or 12.
+**Requirements:** PHP 8.3+ and Laravel 11, 12 or 13.
 
 ## Quick start
 

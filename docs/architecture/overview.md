@@ -82,8 +82,10 @@ default `file` driver maps the catalog to Laravel's language files:
 
 PHP files are parsed by **evaluating their `return` expression through the AST
 constant evaluator** rather than `require`-ing them, so reading a catalog never
-executes project code. Writing routes each key back to the right file through the
-`KeyRouter` and renders it with the matching `FileFormat`.
+executes project code. Each array entry is evaluated independently, so a single
+non-constant value only skips that entry instead of discarding the whole file.
+Writing routes each key back to the right file through the `KeyRouter` and renders
+it with the matching `FileFormat`.
 
 ## Application services
 
@@ -91,7 +93,10 @@ executes project code. Writing routes each key back to the right file through th
   keys used in code but missing from a locale and, optionally, prunes keys that
   are no longer referenced. It is dry-run aware.
 - **ValidationPipeline** runs each configured `ValidationRule` over every
-  translated value, comparing it to the source value, and collects `Issue`s.
+  translated value, comparing it to the source value, and collects `Issue`s. The
+  built-in `PluralFormRule` is language-aware: it checks a translation against the
+  number of plural forms its own language uses (configurable per locale) rather
+  than against the source language's form count.
 - **HealthAnalyzer** produces a `HealthReport`: missing keys, unused keys and
   per-locale completeness.
 - **CatalogTransfer** copies a catalog from one driver to another, powering
