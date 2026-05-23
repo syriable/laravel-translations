@@ -171,4 +171,22 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Metadata
+    |--------------------------------------------------------------------------
+    |
+    | Lang files remain the canonical source of truth for translation values.
+    | Collaboration and analysis metadata (activity, revisions, comments,
+    | contexts, …) that cannot live in a lang file is persisted relationally,
+    | keyed by locale + key. Disable this to run the package in pure file mode
+    | with no database, or point it at a dedicated connection.
+    |
+    */
+
+    'metadata' => [
+        'enabled' => env('TRANSLATIONS_METADATA', true),
+        'connection' => env('TRANSLATIONS_DB_CONNECTION'),
+    ],
+
 ];
