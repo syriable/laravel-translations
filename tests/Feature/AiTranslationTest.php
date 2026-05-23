@@ -81,6 +81,17 @@ it('reports unavailable when ai is disabled', function () {
     $this->artisan('translations:translate', ['locale' => 'fr'])->assertFailed();
 });
 
+it('flags AI output as AI-generated and needing review when the workflow is on', function () {
+    config()->set('translations.workflow.enabled', true);
+
+    app(AiTranslationService::class)->translateMissing('fr');
+
+    $state = app(Syriable\Translations\Workflow\WorkflowService::class)->statusFor('fr', 'messages.bye');
+
+    expect($state->status)->toBe(Syriable\Translations\Domain\Enums\ReviewStatus::NeedsReview)
+        ->and($state->ai_generated)->toBeTrue();
+});
+
 it('still writes translations but logs nothing when metadata is disabled', function () {
     config()->set('translations.metadata.enabled', false);
 
