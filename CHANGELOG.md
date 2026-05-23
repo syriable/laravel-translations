@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for Laravel 13 (alongside the existing Laravel 11 and 12 support).
+- Configurable per-locale plural form counts via
+  `config('translations.validation.plural.counts')`.
+
+### Changed
+
+- `PluralFormRule` is now language-aware: it validates a translation against the
+  number of plural forms its own language uses (English 2, Polish 3, Arabic 6, …)
+  instead of comparing the source and target segment counts.
+
+### Fixed
+
+- Plural validation no longer reports false positives for languages whose plural
+  form count differs from the source language.
+- `PhpArrayFormat` no longer discards an entire PHP language file when a single
+  value is a non-constant expression; valid entries are preserved and only the
+  unevaluable ones are skipped.
+
 ## [0.1.0-beta] - 2026-05-23
 
 ### Added

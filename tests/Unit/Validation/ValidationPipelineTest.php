@@ -45,7 +45,8 @@ it('passes when placeholders match', function () {
     expect($report->isEmpty())->toBeTrue();
 });
 
-it('flags mismatched plural segment counts', function () {
+it('flags a pluralized translation that lacks its language plural forms', function () {
+    // French uses two plural forms; a single segment is missing one.
     $report = pipeline()->validate(catalog(
         ['apples' => 'one apple|many apples'],
         ['apples' => 'une pomme'],
