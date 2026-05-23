@@ -1,0 +1,70 @@
+{
+    "name": "syriable/laravel-translations",
+    "description": "A backend-only Laravel package to extract, manage, validate, and synchronize application translations.",
+    "keywords": [
+        "laravel",
+        "translations",
+        "localization",
+        "i18n",
+        "l10n",
+        "extraction",
+        "lang",
+        "gettext"
+    ],
+    "homepage": "https://github.com/syriable/laravel-translations",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Syriable",
+            "email": "alkhatib.syr@gmail.com",
+            "role": "Maintainer"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/console": "^11.0||^12.0",
+        "illuminate/contracts": "^11.0||^12.0",
+        "illuminate/filesystem": "^11.0||^12.0",
+        "illuminate/support": "^11.0||^12.0",
+        "illuminate/view": "^11.0||^12.0",
+        "nikic/php-parser": "^5.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^9.0||^10.0",
+        "pestphp/pest": "^3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Syriable\\Translations\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Syriable\\Translations\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint",
+        "lint": "vendor/bin/pint --test",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Syriable\\Translations\\TranslationsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}
