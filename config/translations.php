@@ -1,0 +1,199 @@
+<?php
+
+use Syriable\Translations\Quality\Checks\CasingCheck;
+use Syriable\Translations\Quality\Checks\GlossaryCheck;
+use Syriable\Translations\Quality\Checks\HtmlTagCheck;
+use Syriable\Translations\Quality\Checks\LengthRatioCheck;
+use Syriable\Translations\Quality\Checks\MissingPlaceholderCheck;
+use Syriable\Translations\Quality\Checks\UnexpectedPlaceholderCheck;
+use Syriable\Translations\Quality\Checks\UrlEmailCheck;
+use Syriable\Translations\Quality\Checks\WhitespaceCheck;
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Source locale
+    |--------------------------------------------------------------------------
+    |
+    | The locale your application is written in. Every other locale is treated
+    | as a target that gets translated from this one.
+    |
+    */
+
+    'source_locale' => env('TRANSLATIONS_SOURCE_LOCALE', 'en'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Language files location
+    |--------------------------------------------------------------------------
+    |
+    | Where your application's language files live on disk. Used when importing
+    | from and exporting back to lang files.
+    |
+    */
+
+    'lang_path' => env('TRANSLATIONS_LANG_PATH', lang_path()),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database
+    |--------------------------------------------------------------------------
+    |
+    | The connection used for the package tables and the prefix applied to
+    | every table name so they never clash with your application tables.
+    |
+    */
+
+    'database' => [
+        'connection' => env('TRANSLATIONS_DB_CONNECTION'),
+        'prefix' => env('TRANSLATIONS_DB_PREFIX', 'tx_'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Import
+    |--------------------------------------------------------------------------
+    */
+
+    'import' => [
+        'scan_vendor' => true,
+        'detect_placeholders' => true,
+        'detect_html' => true,
+        'detect_plural' => true,
+        'exclude_files' => ['pagination.php'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Export
+    |--------------------------------------------------------------------------
+    */
+
+    'export' => [
+        'sort_keys' => true,
+        'exclude_empty' => true,
+        'approved_only' => env('TRANSLATIONS_EXPORT_APPROVED_ONLY', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Review workflow
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, translations saved by non-reviewers land in a "pending
+    | review" state instead of being approved immediately.
+    |
+    */
+
+    'review' => [
+        'enabled' => env('TRANSLATIONS_REVIEW', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Revision history
+    |--------------------------------------------------------------------------
+    */
+
+    'revisions' => [
+        'enabled' => true,
+        'retention_days' => 90,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI translation
+    |--------------------------------------------------------------------------
+    |
+    | Powered by the laravel/ai SDK. `provider` and `model` choose the default
+    | engine; `cost_rates` are USD per 1M characters and feed cost estimates.
+    |
+    */
+
+    'ai' => [
+        'enabled' => env('TRANSLATIONS_AI', false),
+        'provider' => env('TRANSLATIONS_AI_PROVIDER', 'openai'),
+        'model' => env('TRANSLATIONS_AI_MODEL', 'gpt-4o-mini'),
+        'variants' => 3,
+        'batch_size' => 20,
+        'cost_rates' => [
+            'gpt-4o-mini' => ['input' => 0.15, 'output' => 0.60],
+            'gpt-4o' => ['input' => 2.50, 'output' => 10.00],
+            'claude-sonnet-4-5' => ['input' => 3.00, 'output' => 15.00],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Quality checks
+    |--------------------------------------------------------------------------
+    |
+    | The pluggable checks run against every saved translation (and on demand).
+    | Remove a class to disable a check, or add your own implementing the
+    | Syriable\Translations\Contracts\QualityCheck contract.
+    |
+    */
+
+    'quality' => [
+        'run_on_save' => true,
+        'checks' => [
+            MissingPlaceholderCheck::class,
+            UnexpectedPlaceholderCheck::class,
+            HtmlTagCheck::class,
+            LengthRatioCheck::class,
+            WhitespaceCheck::class,
+            CasingCheck::class,
+            UrlEmailCheck::class,
+            GlossaryCheck::class,
+        ],
+        'length_ratio' => [
+            'min' => 0.5,
+            'max' => 2.0,
+            'overrides' => [],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Source-code scanning
+    |--------------------------------------------------------------------------
+    |
+    | `usage` powers context discovery (where each key is used) and `loose`
+    | powers hardcoded-string detection.
+    |
+    */
+
+    'scanning' => [
+        'paths' => ['app', 'resources/views', 'resources/js'],
+        'extensions' => ['php', 'blade.php', 'vue', 'jsx', 'tsx'],
+        'loose' => [
+            'min_words' => 2,
+            'min_length' => 5,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Analytics
+    |--------------------------------------------------------------------------
+    */
+
+    'analytics' => [
+        'cache_ttl' => 3600,
+        'stale_after_days' => 30,
+        'leaderboard_limit' => 10,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue
+    |--------------------------------------------------------------------------
+    */
+
+    'queue' => [
+        'connection' => env('TRANSLATIONS_QUEUE_CONNECTION'),
+        'name' => env('TRANSLATIONS_QUEUE_NAME', 'translations'),
+    ],
+
+];
