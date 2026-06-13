@@ -54,8 +54,8 @@ jobs:
 
       - name: Install dependencies with the AI SDK
         run: |
+          composer require "laravel/framework:^12.0" "laravel/ai:^0.1" --dev --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
-          composer require laravel/ai:^0.1 --dev --no-interaction --no-progress
 
       - name: Assert AI classes compile against the SDK
         run: >
