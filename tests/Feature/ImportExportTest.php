@@ -62,3 +62,41 @@ it('respects the no-overwrite option', function (): void {
 
     expect(Translations::get('auth.failed', 'en'))->toBe('Original');
 });
+
+it('imports nested php files using slash-path bundle names and round-trips on export', function (): void {
+    makeLangFiles([
+        'en/auth.php' => ['failed' => 'Failed'],
+        'en/filament/resources/bundle-resource.php' => ['title' => 'Bundles'],
+        'en/modules/users/buyer-resource.php' => ['title' => 'Buyers'],
+    ]);
+
+    Translations::import();
+
+    $bundle = Bundle::query()->where('name', 'filament/resources/bundle-resource')->first();
+    expect($bundle)->not->toBeNull();
+    expect($bundle->file_path)->toBe('filament/resources/bundle-resource.php');
+    expect(Phrase::query()->whereBelongsTo($bundle)->where('key', 'title')->exists())->toBeTrue();
+
+    expect(Translations::get('filament/resources/bundle-resource.title', 'en'))->toBe('Bundles');
+    expect(Translations::get('modules/users/buyer-resource.title', 'en'))->toBe('Buyers');
+
+    Translations::set('filament/resources/bundle-resource.title', 'Paquetes', 'es');
+    Translations::export(['locale' => 'es']);
+
+    $path = config('translations.lang_path').'/es/filament/resources/bundle-resource.php';
+    expect(file_exists($path))->toBeTrue();
+    expect(require $path)->toBe(['title' => 'Paquetes']);
+});
+
+it('does not collide nested files that share a filename', function (): void {
+    makeLangFiles([
+        'en/admin/users.php' => ['heading' => 'Admin users'],
+        'en/reports/users.php' => ['heading' => 'Report users'],
+    ]);
+
+    Translations::import();
+
+    expect(Bundle::query()->whereIn('name', ['admin/users', 'reports/users'])->count())->toBe(2);
+    expect(Translations::get('admin/users.heading', 'en'))->toBe('Admin users');
+    expect(Translations::get('reports/users.heading', 'en'))->toBe('Report users');
+});

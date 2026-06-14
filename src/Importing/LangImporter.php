@@ -47,7 +47,7 @@ class LangImporter
                     continue;
                 }
 
-                $bundle = $this->bundle($group, null, $path, 'php');
+                $bundle = $this->bundle($group, null, "{$group}.php", 'php');
                 $this->importValues($bundle, $locale, $this->reader->readPhp($path), $overwrite, $summary);
             }
 
@@ -158,7 +158,7 @@ class LangImporter
             config('translations.import.exclude_files', []),
         );
 
-        return in_array($group, $excluded, true);
+        return in_array(basename($group), $excluded, true);
     }
 
     private function clear(): void
