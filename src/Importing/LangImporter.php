@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Importing;
 
+use Illuminate\Support\Facades\DB;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Events\ImportFinished;
 use Syriable\Translations\Files\LangReader;
@@ -32,6 +33,22 @@ class LangImporter
         $started = hrtime(true);
         $summary = new ImportSummary;
 
+        DB::transaction(fn () => Message::withoutEvents(
+            fn () => $this->populate($fresh, $overwrite, $langPath, $summary),
+        ));
+
+        $summary->phraseCount = Phrase::query()->count();
+        $summary->durationMs = (int) ((hrtime(true) - $started) / 1_000_000);
+
+        $this->record($summary, $options, $fresh);
+
+        ImportFinished::dispatch($summary);
+
+        return $summary;
+    }
+
+    private function populate(bool $fresh, bool $overwrite, string $langPath, ImportSummary $summary): void
+    {
         if ($fresh) {
             $this->clear();
         }
@@ -64,14 +81,6 @@ class LangImporter
         }
 
         $summary->createdCount += $this->seeder->seedAll();
-        $summary->phraseCount = Phrase::query()->count();
-        $summary->durationMs = (int) ((hrtime(true) - $started) / 1_000_000);
-
-        $this->record($summary, $options, $fresh);
-
-        ImportFinished::dispatch($summary);
-
-        return $summary;
     }
 
     private function importVendor(string $langPath, bool $overwrite, ImportSummary $summary): void

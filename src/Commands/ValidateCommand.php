@@ -3,18 +3,28 @@
 namespace Syriable\Translations\Commands;
 
 use Illuminate\Console\Command;
+use Syriable\Translations\Jobs\ScanQualityJob;
 use Syriable\Translations\Models\Locale;
+use Syriable\Translations\Models\QualityIssue;
 use Syriable\Translations\Quality\Inspector;
 
 class ValidateCommand extends Command
 {
-    protected $signature = 'translations:validate {--locale= : Filter by locale code} {--fix : Auto-fix fixable issues}';
+    protected $signature = 'translations:validate {--locale= : Filter by locale code} {--fix : Auto-fix fixable issues} {--queue : Dispatch the scan to the queue instead of running inline}';
 
     protected $description = 'Run quality checks against translated messages';
 
     public function handle(Inspector $inspector): int
     {
         $localeId = $this->localeId();
+
+        if ($this->option('queue')) {
+            ScanQualityJob::dispatch($localeId);
+            $this->components->info('Quality scan dispatched to the queue.');
+
+            return self::SUCCESS;
+        }
+
         $stats = $inspector->scan($localeId);
 
         $this->table(
@@ -34,7 +44,7 @@ class ValidateCommand extends Command
     {
         $fixed = 0;
 
-        \Syriable\Translations\Models\QualityIssue::query()
+        QualityIssue::query()
             ->where('fixable', true)
             ->when($localeId, fn ($query) => $query->where('locale_id', $localeId))
             ->each(function ($issue) use ($inspector, &$fixed): void {

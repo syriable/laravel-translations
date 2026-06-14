@@ -23,31 +23,27 @@ class ReviewFlow
 
     public function approve(Message $message, ?string $reviewer = null): Message
     {
-        Message::stamp('approval', $reviewer);
+        return Message::withStamp('approval', $reviewer, [], function () use ($message, $reviewer): Message {
+            $message->update([
+                'status' => MessageStatus::Approved,
+                'reviewed_by' => $reviewer,
+                'review_note' => null,
+            ]);
 
-        $message->update([
-            'status' => MessageStatus::Approved,
-            'reviewed_by' => $reviewer,
-            'review_note' => null,
-        ]);
-
-        Message::clearStamp();
-
-        return $message;
+            return $message;
+        });
     }
 
     public function reject(Message $message, string $note, ?string $reviewer = null): Message
     {
-        Message::stamp('rejection', $reviewer);
+        return Message::withStamp('rejection', $reviewer, [], function () use ($message, $note, $reviewer): Message {
+            $message->update([
+                'status' => MessageStatus::PendingReview,
+                'reviewed_by' => $reviewer,
+                'review_note' => $note,
+            ]);
 
-        $message->update([
-            'status' => MessageStatus::PendingReview,
-            'reviewed_by' => $reviewer,
-            'review_note' => $note,
-        ]);
-
-        Message::clearStamp();
-
-        return $message;
+            return $message;
+        });
     }
 }
