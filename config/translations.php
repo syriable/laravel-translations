@@ -160,13 +160,15 @@ return [
     |--------------------------------------------------------------------------
     |
     | `usage` powers context discovery (where each key is used) and `loose`
-    | powers hardcoded-string detection.
+    | powers hardcoded-string detection. `scan_after_import` queues a usage
+    | scan on the configured queue once an import finishes.
     |
     */
 
     'scanning' => [
         'paths' => ['app', 'resources/views', 'resources/js'],
         'extensions' => ['php', 'blade.php', 'vue', 'jsx', 'tsx'],
+        'scan_after_import' => env('TRANSLATIONS_SCAN_AFTER_IMPORT', false),
         'loose' => [
             'min_words' => 2,
             'min_length' => 5,

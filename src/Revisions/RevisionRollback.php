@@ -60,15 +60,13 @@ class RevisionRollback
 
     private function restore(Message $message, ?string $value, ?string $by): Message
     {
-        Message::stamp(RevisionReason::Rollback->value, $by);
+        return Message::withStamp(RevisionReason::Rollback->value, $by, [], function () use ($message, $value): Message {
+            $message->update([
+                'value' => $value,
+                'status' => blank($value) ? MessageStatus::Open : MessageStatus::Draft,
+            ]);
 
-        $message->update([
-            'value' => $value,
-            'status' => blank($value) ? MessageStatus::Open : MessageStatus::Draft,
-        ]);
-
-        Message::clearStamp();
-
-        return $message;
+            return $message;
+        });
     }
 }

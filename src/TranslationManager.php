@@ -3,6 +3,7 @@
 namespace Syriable\Translations;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Syriable\Translations\Ai\MachineTranslation;
 use Syriable\Translations\Analytics\Insights;
@@ -55,25 +56,25 @@ class TranslationManager
 
     public function set(string $key, string $value, ?string $locale = null, array $options = []): Message
     {
-        $phrase = $this->resolveOrCreatePhrase($key);
-        $localeModel = $this->localeModel($locale);
+        return DB::transaction(function () use ($key, $value, $locale, $options): Message {
+            $phrase = $this->resolveOrCreatePhrase($key);
+            $localeModel = $this->localeModel($locale);
 
-        $message = Message::query()->firstOrNew([
-            'phrase_id' => $phrase->id,
-            'locale_id' => $localeModel->id,
-        ]);
+            $message = Message::query()->firstOrNew([
+                'phrase_id' => $phrase->id,
+                'locale_id' => $localeModel->id,
+            ]);
 
-        Message::stamp($options['reason'] ?? 'manual', $options['by'] ?? null, $options['meta'] ?? []);
+            return Message::withStamp($options['reason'] ?? 'manual', $options['by'] ?? null, $options['meta'] ?? [], function () use ($message, $value, $options): Message {
+                $message->fill([
+                    'value' => $value,
+                    'status' => $options['status'] ?? MessageStatus::Draft,
+                    'translated_by' => $options['by'] ?? $message->translated_by,
+                ])->save();
 
-        $message->fill([
-            'value' => $value,
-            'status' => $options['status'] ?? MessageStatus::Draft,
-            'translated_by' => $options['by'] ?? $message->translated_by,
-        ])->save();
-
-        Message::clearStamp();
-
-        return $message;
+                return $message;
+            });
+        });
     }
 
     public function forget(string $key, ?string $locale = null): void

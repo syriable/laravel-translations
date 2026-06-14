@@ -4,12 +4,13 @@ namespace Syriable\Translations\Commands;
 
 use Illuminate\Console\Command;
 use Syriable\Translations\Ai\MachineTranslation;
+use Syriable\Translations\Jobs\TranslateLocaleJob;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\TranslationManager;
 
 class TranslateCommand extends Command
 {
-    protected $signature = 'translations:translate {locale : Target locale code} {--key= : Translate a single dotted key} {--all : Translate every untranslated message} {--provider=}';
+    protected $signature = 'translations:translate {locale : Target locale code} {--key= : Translate a single dotted key} {--all : Translate every untranslated message} {--provider=} {--queue : Dispatch a whole-locale translation to the queue}';
 
     protected $description = 'Machine-translate messages using the configured AI provider';
 
@@ -35,6 +36,13 @@ class TranslateCommand extends Command
         if ($key = $this->option('key')) {
             $message = $manager->translate($key, $code, $options);
             $this->components->info($message ? "Translated [{$key}]: {$message->value}" : "No source value for [{$key}].");
+
+            return self::SUCCESS;
+        }
+
+        if ($this->option('queue')) {
+            TranslateLocaleJob::dispatch($locale->id, $options);
+            $this->components->info("Translation of [{$code}] dispatched to the queue.");
 
             return self::SUCCESS;
         }

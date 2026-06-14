@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Models;
 
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -77,6 +78,17 @@ class Message extends TranslationModel
         static::$stampReason = null;
         static::$stampChangedBy = null;
         static::$stampMeta = [];
+    }
+
+    public static function withStamp(?string $reason, ?string $changedBy, array $meta, Closure $callback): mixed
+    {
+        static::stamp($reason, $changedBy, $meta);
+
+        try {
+            return $callback();
+        } finally {
+            static::clearStamp();
+        }
     }
 
     protected static function booted(): void

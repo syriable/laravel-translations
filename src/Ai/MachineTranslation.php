@@ -54,18 +54,16 @@ class MachineTranslation
             'locale_id' => $target->id,
         ]);
 
-        Message::stamp(RevisionReason::Ai->value, $options['by'] ?? null);
+        return Message::withStamp(RevisionReason::Ai->value, $options['by'] ?? null, [], function () use ($message, $best, $result): Message {
+            $message->fill([
+                'value' => $best,
+                'status' => MessageStatus::Draft,
+                'ai_generated' => true,
+                'ai_provider' => $result->provider,
+            ])->save();
 
-        $message->fill([
-            'value' => $best,
-            'status' => MessageStatus::Draft,
-            'ai_generated' => true,
-            'ai_provider' => $result->provider,
-        ])->save();
-
-        Message::clearStamp();
-
-        return $message;
+            return $message;
+        });
     }
 
     public function translateOpen(Locale $target, array $options = []): int
