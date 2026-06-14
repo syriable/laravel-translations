@@ -4,6 +4,9 @@ namespace Syriable\Translations\Files;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 class LangReader
 {
@@ -39,10 +42,20 @@ class LangReader
         }
 
         $files = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+        );
 
-        foreach (glob($dir.'/*.php') ?: [] as $file) {
-            $files[basename($file, '.php')] = $file;
+        foreach ($iterator as $file) {
+            if (! $file instanceof SplFileInfo || ! $file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relative = ltrim(str_replace('\\', '/', substr($file->getPathname(), strlen($dir))), '/');
+            $files[substr($relative, 0, -4)] = $file->getPathname();
         }
+
+        ksort($files);
 
         return $files;
     }

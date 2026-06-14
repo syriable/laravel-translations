@@ -116,6 +116,8 @@ class LangExporter
             return "{$langPath}/vendor/{$bundle->namespace}/{$code}/{$bundle->name}.php";
         }
 
-        return "{$langPath}/{$code}/{$bundle->name}.php";
+        $relative = $bundle->file_path ?: "{$bundle->name}.php";
+
+        return "{$langPath}/{$code}/{$relative}";
     }
 }

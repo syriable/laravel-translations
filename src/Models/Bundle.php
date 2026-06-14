@@ -2,7 +2,9 @@
 
 namespace Syriable\Translations\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Syriable\Translations\Analytics\BundleCoverage;
 
 class Bundle extends TranslationModel
 {
@@ -23,5 +25,15 @@ class Bundle extends TranslationModel
     public function label(): string
     {
         return $this->namespace ? "{$this->namespace}::{$this->name}" : $this->name;
+    }
+
+    public function scopeWithTranslationProgress(Builder $query): Builder
+    {
+        return app(BundleCoverage::class)->applyProgressCounts($query);
+    }
+
+    public function translationProgressPercent(): float
+    {
+        return app(BundleCoverage::class)->percent($this);
     }
 }

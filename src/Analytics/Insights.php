@@ -15,10 +15,16 @@ class Insights
         return Cache::remember('translations.insights', config('translations.analytics.cache_ttl', 3600), fn () => [
             'coverage' => $this->coverage(),
             'overall_coverage' => $this->overallCoverage(),
+            'bundle_coverage' => $this->bundleCoverage(),
             'leaderboard' => $this->leaderboard(),
             'velocity' => $this->velocity(),
             'stale' => $this->staleCounts(),
         ]);
+    }
+
+    public function bundleCoverage(?string $bundleName = null): array
+    {
+        return app(BundleCoverage::class)->coverage($bundleName);
     }
 
     public function coverage(): array
