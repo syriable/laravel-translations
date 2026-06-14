@@ -27,7 +27,7 @@ did on the server is here; nothing that touched the browser is.
 
 | Area | What you get |
 | --- | --- |
-| **Lang file sync** | Import PHP, JSON and vendor namespace files into the DB; export them back, preserving nesting, sorting, plurals and Unicode. |
+| **Lang file sync** | Import PHP (including nested subdirectories), JSON and vendor namespace files into the DB; export them back to the same paths, preserving nesting, sorting, plurals and Unicode. |
 | **Programmatic API** | `get` / `set` / `has` / `forget` / `all` over a normalized `locale → bundle → phrase → message` model. |
 | **AI translation** | Single-key and whole-locale machine translation via the `laravel/ai` SDK, with glossary + code-context-aware prompts, cost estimation and per-call usage logging. |
 | **Quality checks** | Eight pluggable checks (placeholders, HTML, length ratio, whitespace, casing, URLs/emails, glossary) that run on save and on demand, with auto-fix. |
@@ -36,7 +36,7 @@ did on the server is here; nothing that touched the browser is.
 | **Hardcoded-string detection** | Scan Blade/JS/PHP for untranslated user-facing strings, with a false-positive filter and an ignore list. |
 | **Context scanning** | Record where each key is used in your codebase to enrich AI prompts. |
 | **Review workflow** | Optional approval gate; non-reviewer edits land in "pending review". |
-| **Analytics** | Coverage, velocity, stale detection and contributor leaderboards. |
+| **Analytics** | Coverage (per locale and per bundle), velocity, stale detection and contributor leaderboards. |
 | **Activity log** | Record arbitrary member actions for auditing. |
 
 ---
@@ -92,7 +92,7 @@ src/
 ├── Quality/                          # Inspector + Checks/*
 ├── Glossary/Glossary.php
 ├── Revisions/RevisionRollback.php
-├── Analytics/Insights.php
+├── Analytics/                        # Insights + BundleCoverage
 ├── Scanning/                         # Usage (context) + Loose (hardcoded) scanners
 ├── Events/  Listeners/  Jobs/
 └── Commands/                         # 9 artisan commands
@@ -120,7 +120,7 @@ straight from the container.
 | `AiTranslator` / `FakeTranslator` | The two `Translator` implementations. `AiTranslator` drives a `laravel/ai` structured-output agent; `FakeTranslator` is deterministic for tests and local use. |
 | `Glossary` | CRUD for terms + per-locale definitions, and term matching used by AI prompts and the glossary check. |
 | `RevisionRollback` | Restore a message to a revision, or bulk-undo changes by author/date. |
-| `Insights` | Cached coverage, velocity, stale and leaderboard analytics. |
+| `Insights` / `BundleCoverage` | Cached coverage (per locale and per bundle), velocity, stale and leaderboard analytics. |
 | `UsageScanner` / `LooseStringScanner` | Source-code scanners for key usage (context) and hardcoded strings. |
 
 **How they interact:** the facade delegates to `TranslationManager`, which calls importer/exporter
@@ -162,6 +162,8 @@ Translations::quality()->scan();
 Translations::glossary()->define('invoice');
 Translations::revisions()->byMember('maria');
 Translations::insights()->dashboard();
+Translations::insights()->coverage();         // progress per locale
+Translations::insights()->bundleCoverage();   // progress per bundle (lang file)
 Translations::review()->approve($message, 'lead-reviewer');
 ```
 
@@ -244,16 +246,17 @@ Run with `composer test` (Pest 4 + Orchestra Testbench, in-memory SQLite).
 - **Unit** — pure logic with no database: `PlaceholderScanner` (placeholder/HTML/plural/URL extraction)
   and `LangWriter`/`LangReader` round-trips (nesting, sorting, Unicode JSON).
 - **Feature** — full Laravel integration:
-  - import/export across PHP, JSON and vendor files, plus the `--no-overwrite` path;
+  - import/export across PHP, JSON, vendor and nested files, plus the `--no-overwrite` path;
   - the `get`/`set`/`forget`/`addLocale` API including on-demand phrase creation and locale seeding;
   - revisions: capture on change, single rollback, bulk rollback by author, and the disabled-config path;
   - quality: missing-placeholder errors, HTML mismatches, auto-fix, and "source isn't checked against itself";
   - AI: applying a translation through a `FakeTranslator`, glossary/context forwarding, and whole-locale translation with usage logging;
   - scanning: recording key usages and detecting hardcoded strings while skipping translated ones;
+  - bundle coverage: zero phrases, zero targets, partial and full per-bundle progress;
   - glossary + review workflow status transitions.
 - **Edge cases covered**: empty target files, keys without a dot (JSON bundle), nested dotted keys,
-  RTL/Unicode values, the source locale never validating against itself, and revisions short-circuiting
-  when the value didn't actually change.
+  nested lang directories and filename collisions, RTL/Unicode values, the source locale never
+  validating against itself, and revisions short-circuiting when the value didn't actually change.
 
 The `Translator` contract means AI paths are tested deterministically with no HTTP and no mocking.
 
@@ -327,7 +330,7 @@ composer require laravel/ai
 translations:install            Publish config, migrate, optionally --import
 translations:import             Lang files -> DB        (--fresh, --no-overwrite)
 translations:export             DB -> lang files        (--locale=, --bundle=)
-translations:status             Coverage per locale     (--locale=)
+translations:status             Coverage per locale/bundle (--locale=, --bundles, --bundle=)
 translations:translate {locale} AI translate            (--key=, --all, --provider=)
 translations:validate           Run quality checks      (--locale=, --fix)
 translations:scan-usage         Record where keys are used (--path=)
