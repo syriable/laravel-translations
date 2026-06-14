@@ -29,17 +29,25 @@ class Insights
 
     public function coverage(): array
     {
-        return Locale::query()->enabled()->targets()->get()->map(function (Locale $locale): array {
-            $total = Message::query()->where('locale_id', $locale->id)->count();
-            $done = Message::query()->where('locale_id', $locale->id)->translated()->count();
-            $approved = Message::query()->where('locale_id', $locale->id)->where('status', MessageStatus::Approved->value)->count();
+        $stats = Message::query()
+            ->selectRaw('locale_id, count(*) as total')
+            ->selectRaw('sum(case when status != ? then 1 else 0 end) as translated', [MessageStatus::Open->value])
+            ->selectRaw('sum(case when status = ? then 1 else 0 end) as approved', [MessageStatus::Approved->value])
+            ->groupBy('locale_id')
+            ->get()
+            ->keyBy('locale_id');
+
+        return Locale::query()->enabled()->targets()->get()->map(function (Locale $locale) use ($stats): array {
+            $row = $stats->get($locale->id);
+            $total = (int) ($row->total ?? 0);
+            $translated = (int) ($row->translated ?? 0);
 
             return [
                 'locale' => $locale->code,
                 'total' => $total,
-                'translated' => $done,
-                'approved' => $approved,
-                'percent' => $total > 0 ? round($done / $total * 100, 1) : 0.0,
+                'translated' => $translated,
+                'approved' => (int) ($row->approved ?? 0),
+                'percent' => $total > 0 ? round($translated / $total * 100, 1) : 0.0,
             ];
         })->values()->all();
     }

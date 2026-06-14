@@ -18,6 +18,8 @@ use Syriable\Translations\Support\PlaceholderScanner;
 
 class LangImporter
 {
+    private ?array $excludedFiles = null;
+
     public function __construct(
         private readonly LangReader $reader,
         private readonly PlaceholderScanner $scanner,
@@ -162,12 +164,12 @@ class LangImporter
 
     private function excluded(string $group): bool
     {
-        $excluded = array_map(
+        $this->excludedFiles ??= array_map(
             fn (string $file) => pathinfo($file, PATHINFO_FILENAME),
             config('translations.import.exclude_files', []),
         );
 
-        return in_array(basename($group), $excluded, true);
+        return in_array(basename($group), $this->excludedFiles, true);
     }
 
     private function clear(): void
