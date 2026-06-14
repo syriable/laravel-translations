@@ -10,10 +10,15 @@ use Syriable\Translations\Models\Revision;
 
 class Insights
 {
+    public function __construct(
+        private readonly BundleCoverage $bundleCoverage,
+    ) {}
+
     public function dashboard(): array
     {
         return Cache::remember('translations.insights', config('translations.analytics.cache_ttl', 3600), fn () => [
             'coverage' => $this->coverage(),
+            'bundle_coverage' => $this->bundleCoverage(),
             'overall_coverage' => $this->overallCoverage(),
             'leaderboard' => $this->leaderboard(),
             'velocity' => $this->velocity(),
@@ -36,6 +41,14 @@ class Insights
                 'percent' => $total > 0 ? round($done / $total * 100, 1) : 0.0,
             ];
         })->values()->all();
+    }
+
+    /**
+     * @return list<array{bundle: string, name: string, namespace: ?string, total: int, translated: int, percent: float}>
+     */
+    public function bundleCoverage(?string $bundleName = null): array
+    {
+        return $this->bundleCoverage->coverage($bundleName);
     }
 
     public function overallCoverage(): float
