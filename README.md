@@ -27,7 +27,7 @@ did on the server is here; nothing that touched the browser is.
 
 | Area | What you get |
 | --- | --- |
-| **Lang file sync** | Import PHP (including nested subdirectories), JSON and vendor namespace files into the DB; export them back to the same paths, preserving nesting, sorting, plurals and Unicode. |
+| **Lang file sync** | Import PHP (including nested subdirectories), JSON and vendor namespace files into the DB; export them back to the same paths, preserving nesting, sorting, plurals and Unicode. Imports are atomic (wrapped in a transaction). |
 | **Programmatic API** | `get` / `set` / `has` / `forget` / `all` over a normalized `locale → bundle → phrase → message` model. |
 | **AI translation** | Single-key and whole-locale machine translation via the `laravel/ai` SDK, with glossary + code-context-aware prompts, cost estimation and per-call usage logging. |
 | **Quality checks** | Eight pluggable checks (placeholders, HTML, length ratio, whitespace, casing, URLs/emails, glossary) that run on save and on demand, with auto-fix. |
@@ -58,7 +58,8 @@ backbone and folds every pro feature into it as a first-class service:
                        │            │                                                   │
                        │       MessageSaved event                                       │
                        │       ├─ RecordRevision      (history)                         │
-                       │       └─ RunQualityChecks    (validation)                      │
+                       │       ├─ RunQualityChecks    (validation)                      │
+                       │       └─ FlushInsightsCache  (analytics)                       │
                        │       ImportFinished event                                     │
                        │       └─ ScanUsageAfterImport(context)                         │
                        │                                                                │
@@ -111,22 +112,25 @@ straight from the container.
 | Class | Responsibility |
 | --- | --- |
 | `TranslationManager` | The public API. Resolves dotted keys to phrases, reads/writes messages, and exposes every sub-service. Backs the `Translations` facade. |
-| `LangImporter` | Walks the lang path, reads PHP/JSON/vendor files, creates `Locale`/`Bundle`/`Phrase`/`Message` rows, detects placeholders/HTML/plurals, seeds missing target messages, records an `ImportRecord`, fires `ImportFinished`. |
+| `LangImporter` | Walks the lang path, reads PHP/JSON/vendor files, creates `Locale`/`Bundle`/`Phrase`/`Message` rows, detects placeholders/HTML/plurals, seeds missing target messages, records an `ImportRecord`, fires `ImportFinished`. Runs in a transaction and suppresses per-row events. |
 | `LangExporter` | Reads messages back out (optionally approved-only), inflates dotted keys to nested arrays and writes PHP/JSON files, fires `ExportFinished`. |
 | `LangReader` / `LangWriter` | The only file-format code. Reader flattens with `Arr::dot`; writer inflates, sorts and pretty-prints. |
-| `Message` (model) | Central record. Fires `MessageSaved` whenever a value changes, carrying the old value plus an optional "stamp" (reason/author/meta) used for revisions. |
+| `Message` (model) | Central record. Fires `MessageSaved` whenever a value changes, carrying the old value plus an optional "stamp" (reason/author/meta) used for revisions. `withStamp()` brackets a stamped save so the context can never leak. |
 | `Inspector` | Runs the configured `QualityCheck` list against a message versus its source, persists `QualityIssue` rows, and applies auto-fixes. |
 | `MachineTranslation` | Builds a context-rich `TranslationRequest` (glossary + usages + siblings + tone), delegates to a `Translator`, applies the best result, and logs `AiUsage`. |
 | `AiTranslator` / `FakeTranslator` | The two `Translator` implementations. `AiTranslator` drives a `laravel/ai` structured-output agent; `FakeTranslator` is deterministic for tests and local use. |
 | `Glossary` | CRUD for terms + per-locale definitions, and term matching used by AI prompts and the glossary check. |
 | `RevisionRollback` | Restore a message to a revision, or bulk-undo changes by author/date. |
-| `Insights` / `BundleCoverage` | Cached coverage (per locale and per bundle), velocity, stale and leaderboard analytics. |
+| `Insights` / `BundleCoverage` | Cached coverage (per locale and per bundle), velocity, stale and leaderboard analytics. The cache is flushed automatically on writes and imports. |
 | `UsageScanner` / `LooseStringScanner` | Source-code scanners for key usage (context) and hardcoded strings. |
 
 **How they interact:** the facade delegates to `TranslationManager`, which calls importer/exporter
 directly and resolves the rest from the container on demand. Writes go through the `Message` model,
 whose `MessageSaved` event drives revisions and quality checks via listeners — so history and
-validation happen no matter *who* changed the value (manual, AI, import, or rollback).
+validation happen no matter *who* changed the value (manual, AI, or rollback). Bulk imports run
+inside a transaction with model events suppressed, so they neither bloat history with a revision per
+imported string nor run inline quality on every row — validate imported catalogs with
+`translations:validate` afterwards.
 
 ---
 
@@ -197,13 +201,14 @@ $this->app->instance(Translator::class, new FakeTranslator(
 ## 6. Internal flow
 
 ```
-set()      → resolve/create phrase → stamp(reason, by) → Message::save()
+set()      → DB transaction { resolve/create phrase → withStamp(reason, by) { Message::save() } }
                                                             └─ MessageSaved
-                                                                 ├─ RecordRevision  → revisions row
-                                                                 └─ RunQualityChecks → quality_issues rows
+                                                                 ├─ RecordRevision     → revisions row
+                                                                 ├─ RunQualityChecks    → quality_issues rows
+                                                                 └─ FlushInsightsCache  → drop analytics cache
 
-import()   → read locales → read php/json/vendor → upsert phrase + message
-           → seed missing target messages → ImportRecord → ImportFinished → (context scan)
+import()   → DB transaction + events suppressed { read php/json/vendor → upsert phrase + message
+           → seed missing target } → ImportRecord → ImportFinished → flush cache → (opt. context scan)
 
 export()   → load messages (approved-only?) → inflate dotted keys → write php/json → ExportFinished
 
@@ -230,9 +235,9 @@ A single `config/translations.php`. Highlights and the "why":
 | `revisions.enabled`, `revisions.retention_days` | History tracking and pruning. |
 | `ai.*` | Provider, model, variant count, batch size and per-model `cost_rates` (USD per 1M chars) used for estimates. |
 | `quality.checks`, `quality.run_on_save`, `quality.length_ratio.overrides` | The pluggable check list and per-language length tuning. |
-| `scanning.paths`, `scanning.extensions`, `scanning.loose.*` | Where and how the source scanners look. |
-| `analytics.*` | Cache TTL, stale threshold and leaderboard size. |
-| `queue.*` | Connection/queue for the background jobs. |
+| `scanning.paths`, `scanning.extensions`, `scanning.scan_after_import`, `scanning.loose.*` | Where and how the source scanners look, and whether import queues a usage scan. |
+| `analytics.*` | Cache TTL, stale threshold and leaderboard size (the dashboard cache is also flushed on every write/import). |
+| `queue.*` | Connection/queue for the background jobs (`--queue` flags and `scanning.scan_after_import`). |
 
 Disabling a feature is configuration, not code: remove a class from `quality.checks` to drop a check,
 set `ai.enabled=false` to refuse AI calls, set `review.enabled=false` to auto-approve.
@@ -247,12 +252,14 @@ Run with `composer test` (Pest 4 + Orchestra Testbench, in-memory SQLite).
   and `LangWriter`/`LangReader` round-trips (nesting, sorting, Unicode JSON).
 - **Feature** — full Laravel integration:
   - import/export across PHP, JSON, vendor and nested files, plus the `--no-overwrite` path;
+  - import hardening: atomic rollback on failure, and bulk imports skipping per-row revisions/quality;
   - the `get`/`set`/`forget`/`addLocale` API including on-demand phrase creation and locale seeding;
-  - revisions: capture on change, single rollback, bulk rollback by author, and the disabled-config path;
+  - revisions: capture on change, single rollback, bulk rollback by author, stamp isolation, and the disabled-config path;
   - quality: missing-placeholder errors, HTML mismatches, auto-fix, and "source isn't checked against itself";
   - AI: applying a translation through a `FakeTranslator`, glossary/context forwarding, and whole-locale translation with usage logging;
   - scanning: recording key usages and detecting hardcoded strings while skipping translated ones;
   - bundle coverage: zero phrases, zero targets, partial and full per-bundle progress;
+  - job wiring: `--queue` flags and scan-after-import dispatch onto the configured queue;
   - glossary + review workflow status transitions.
 - **Edge cases covered**: empty target files, keys without a dot (JSON bundle), nested dotted keys,
   nested lang directories and filename collisions, RTL/Unicode values, the source locale never
@@ -331,10 +338,10 @@ translations:install            Publish config, migrate, optionally --import
 translations:import             Lang files -> DB        (--fresh, --no-overwrite)
 translations:export             DB -> lang files        (--locale=, --bundle=)
 translations:status             Coverage per locale/bundle (--locale=, --bundles, --bundle=)
-translations:translate {locale} AI translate            (--key=, --all, --provider=)
-translations:validate           Run quality checks      (--locale=, --fix)
-translations:scan-usage         Record where keys are used (--path=)
-translations:scan-loose         Detect hardcoded strings   (--path=)
+translations:translate {locale} AI translate            (--key=, --all, --provider=, --queue)
+translations:validate           Run quality checks      (--locale=, --fix, --queue)
+translations:scan-usage         Record where keys are used (--path=, --queue)
+translations:scan-loose         Detect hardcoded strings   (--path=, --queue)
 translations:prune-revisions    Prune old history       (--days=, --dry-run)
 ```
 
