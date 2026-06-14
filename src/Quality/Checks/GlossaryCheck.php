@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Quality\Checks;
 
+use Illuminate\Support\Collection;
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Models\Term;
 use Syriable\Translations\Quality\Check;
@@ -9,6 +10,8 @@ use Syriable\Translations\Support\Issue;
 
 class GlossaryCheck extends Check
 {
+    private ?Collection $terms = null;
+
     public function key(): string
     {
         return 'glossary';
@@ -22,9 +25,7 @@ class GlossaryCheck extends Check
 
         $violations = [];
 
-        $terms = Term::query()->with('definitions')->get();
-
-        foreach ($terms as $term) {
+        foreach ($this->terms() as $term) {
             if (! $this->mentions($source->value, $term)) {
                 continue;
             }
@@ -49,6 +50,11 @@ class GlossaryCheck extends Check
             'Glossary terms were not applied: '.implode(', ', $violations),
             ['violations' => $violations],
         );
+    }
+
+    private function terms(): Collection
+    {
+        return $this->terms ??= Term::query()->with('definitions')->get();
     }
 
     private function mentions(string $text, Term $term): bool
