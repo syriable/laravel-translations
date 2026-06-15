@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Support;
 
+use Syriable\Translations\Enums\Direction;
+
 class LocaleMeta
 {
     private const RTL = ['ar', 'fa', 'he', 'ur', 'ps', 'sd', 'ug', 'yi'];
@@ -37,7 +39,7 @@ class LocaleMeta
         return [
             'name' => $name,
             'native_name' => $native,
-            'rtl' => in_array($base, self::RTL, true),
+            'direction' => in_array($base, self::RTL, true) ? Direction::Rtl : Direction::Ltr,
         ];
     }
 }
