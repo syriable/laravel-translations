@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Syriable\Translations\Enums\Direction;
 
 return new class extends Migration
 {
@@ -20,7 +21,7 @@ return new class extends Migration
             $table->string('code')->unique();
             $table->string('name');
             $table->string('native_name')->nullable();
-            $table->boolean('rtl')->default(false);
+            $table->string('direction')->default(Direction::Ltr->value);
             $table->boolean('is_source')->default(false);
             $table->string('tone')->default('neutral');
             $table->boolean('enabled')->default(true)->index();

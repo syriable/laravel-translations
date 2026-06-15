@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Syriable\Translations\Enums\Direction;
 
 class Locale extends TranslationModel
 {
@@ -17,7 +18,7 @@ class Locale extends TranslationModel
     protected function casts(): array
     {
         return [
-            'rtl' => 'boolean',
+            'direction' => Direction::class,
             'is_source' => 'boolean',
             'enabled' => 'boolean',
         ];
