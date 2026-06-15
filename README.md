@@ -1,191 +1,241 @@
 # Laravel Translations
 
-A clean, **backend-only** toolkit for managing your Laravel translations from code. It imports and
-exports language files, machine-translates with AI, enforces quality, tracks revision history,
-detects hardcoded strings, manages a glossary, and reports analytics — all through one small,
-Spatie-style API. No UI, no frontend, no opinions about how you render anything.
+[![Tests](https://github.com/syriable/laravel-translations/actions/workflows/tests.yml/badge.svg)](https://github.com/syriable/laravel-translations/actions/workflows/tests.yml)
+[![Lint](https://github.com/syriable/laravel-translations/actions/workflows/lint.yml/badge.svg)](https://github.com/syriable/laravel-translations/actions/workflows/lint.yml)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
+
+Manage your Laravel translations from code — import and export language files, machine-translate with
+AI, enforce quality, track revision history, detect hardcoded strings, manage a glossary, and report
+analytics. It's a **backend-only** toolkit: one config file, one service provider, one `Translations`
+facade. No UI, no frontend, no opinions about how you render anything.
 
 ```php
 use Syriable\Translations\Facades\Translations;
 
-Translations::import();                                  // lang files  -> database
-Translations::set('auth.failed', 'Echec', 'fr');         // write a value
-Translations::get('auth.failed', 'fr');                  // 'Echec'
-Translations::translate('auth.failed', 'de');            // AI translation
-Translations::export();                                   // database -> lang files
+Translations::import();                            // lang files  → database
+Translations::set('auth.failed', 'Echec', 'fr');   // write a value
+Translations::get('auth.failed', 'fr');            // 'Echec'
+Translations::translate('auth.failed', 'de');      // AI translation
+Translations::export();                            // database → lang files
 ```
 
 ---
 
-## 1. Package overview
+## Table of contents
 
-This package unifies two previously separate products — a free translation manager and a paid "pro"
-add-on — into a **single, backend-only package** with one coherent API. Everything the two packages
-did on the server is here; nothing that touched the browser is.
-
-**Unified feature set**
-
-| Area | What you get |
-| --- | --- |
-| **Lang file sync** | Import PHP (including nested subdirectories), JSON and vendor namespace files into the DB; export them back to the same paths, preserving nesting, sorting, plurals and Unicode. Imports are atomic (wrapped in a transaction). |
-| **Programmatic API** | `get` / `set` / `has` / `forget` / `all` over a normalized `locale → bundle → phrase → message` model. |
-| **AI translation** | Single-key and whole-locale machine translation via the `laravel/ai` SDK, with glossary + code-context-aware prompts, cost estimation and per-call usage logging. |
-| **Quality checks** | Eight pluggable checks (placeholders, HTML, length ratio, whitespace, casing, URLs/emails, glossary) that run on save and on demand, with auto-fix. |
-| **Revision history** | Every value change is recorded; roll back a single message, or in bulk by author or date. |
-| **Glossary** | Per-locale approved terminology that feeds both AI prompts and the glossary quality check. |
-| **Hardcoded-string detection** | Scan Blade/JS/PHP for untranslated user-facing strings, with a false-positive filter and an ignore list. |
-| **Context scanning** | Record where each key is used in your codebase to enrich AI prompts. |
-| **Review workflow** | Optional approval gate; non-reviewer edits land in "pending review". |
-| **Analytics** | Coverage (per locale and per bundle), velocity, stale detection and contributor leaderboards. |
-| **Activity log** | Record arbitrary member actions for auditing. |
-
----
-
-## 2. Core design concept — how two packages became one
-
-The original "free" package owned the data model and the import/export engine. The "pro" package
-bolted features on from the outside: it shipped its own tables, its own service provider, and hooked
-into the free package through two events (`TranslationSaved`, `ImportCompleted`).
-
-This package removes that seam. The realization is that **"pro" was never a separate domain — it was
-just more behavior reacting to the same lifecycle.** So the rewrite keeps the event lifecycle as the
-backbone and folds every pro feature into it as a first-class service:
-
-```
-                       ┌──────────── Translations facade (one entry point) ────────────┐
-                       │                                                                │
-   lang files ──import──►  Locale · Bundle · Phrase · Message  ──export──► lang files   │
-                       │            │                                                   │
-                       │       MessageSaved event                                       │
-                       │       ├─ RecordRevision      (history)                         │
-                       │       ├─ RunQualityChecks    (validation)                      │
-                       │       └─ FlushInsightsCache  (analytics)                       │
-                       │       ImportFinished event                                     │
-                       │       └─ ScanUsageAfterImport(context)                         │
-                       │                                                                │
-                       │  on-demand services: AI · Glossary · Insights · Scanners       │
-                       └───────────────────────────────────────────────────────────┘
-```
-
-The same five core tables the free package used are still the spine; the nine pro tables become
-plain support tables owned by the same package. One config file, one service provider, one facade.
-
-**What was deliberately dropped:** all HTTP controllers, routes, form requests, Inertia/React views
-and assets. They belong to whatever UI you choose to build on top. This package is the engine.
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [How it's modelled](#how-its-modelled)
+- [Usage](#usage)
+  - [Reading and writing translations](#reading-and-writing-translations)
+  - [Locales](#locales)
+  - [Importing and exporting language files](#importing-and-exporting-language-files)
+  - [AI translation](#ai-translation)
+  - [Quality checks](#quality-checks)
+  - [Glossary](#glossary)
+  - [Revision history](#revision-history)
+  - [Review workflow](#review-workflow)
+  - [Analytics](#analytics)
+  - [Scanning your source code](#scanning-your-source-code)
+  - [Activity log](#activity-log)
+- [API reference](#api-reference)
+- [Artisan commands](#artisan-commands)
+- [Configuration reference](#configuration-reference)
+- [Events](#events)
+- [Models](#models)
+- [Enums](#enums)
+- [Testing](#testing)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Changelog](#changelog)
+- [License](#license)
 
 ---
 
-## 3. Folder structure (Spatie-style)
+## Installation
 
-```
-src/
-├── TranslationsServiceProvider.php   # single entry point: config, migrations, commands, listeners
-├── TranslationManager.php            # the unified API behind the facade
-├── Facades/Translations.php
-├── Models/                           # Eloquent models (prefixed tables, no business logic)
-├── Enums/                            # MessageStatus, MemberRole, Severity, RevisionReason, ...
-├── Contracts/                        # QualityCheck, Translator, SourceScanner
-├── Support/                          # value objects: Issue, *Summary, *Request/Result, seeders
-├── Files/                            # LangReader / LangWriter (php + json)
-├── Importing/LangImporter.php        # disk -> database
-├── Exporting/LangExporter.php        # database -> disk
-├── Ai/                               # MachineTranslation, AiTranslator, FakeTranslator, prompts, cost
-├── Quality/                          # Inspector + Checks/*
-├── Glossary/Glossary.php
-├── Revisions/RevisionRollback.php
-├── Analytics/                        # Insights + BundleCoverage
-├── Scanning/                         # Usage (context) + Loose (hardcoded) scanners
-├── Events/  Listeners/  Jobs/
-└── Commands/                         # 9 artisan commands
-config/translations.php
-database/migrations/                  # two migrations: core tables + support tables
-tests/                                # Pest: Unit + Feature
+Require the package via Composer:
+
+```bash
+composer require syriable/laravel-translations
 ```
 
-No `Domain/Application/Infrastructure` layering. Each service is a flat class with one job, resolved
-straight from the container.
+Run the installer — it publishes the config file, runs the migrations, and (with `--import`) loads
+your existing language files:
+
+```bash
+php artisan translations:install --import
+```
+
+Or do the steps yourself:
+
+```bash
+php artisan vendor:publish --tag=translations-config
+php artisan vendor:publish --tag=translations-migrations   # optional, only to customize them
+php artisan migrate
+```
+
+**Requirements:** PHP 8.2+, Laravel 11, 12 or 13.
+
+**AI features are optional.** They're only needed when you call `Translations::translate()` and friends,
+and they rely on the [`laravel/ai`](https://github.com/laravel/ai) SDK:
+
+```bash
+composer require laravel/ai
+```
 
 ---
 
-## 4. Core classes
+## Configuration
 
-| Class | Responsibility |
-| --- | --- |
-| `TranslationManager` | The public API. Resolves dotted keys to phrases, reads/writes messages, and exposes every sub-service. Backs the `Translations` facade. |
-| `LangImporter` | Walks the lang path, reads PHP/JSON/vendor files, creates `Locale`/`Bundle`/`Phrase`/`Message` rows, detects placeholders/HTML/plurals, seeds missing target messages, records an `ImportRecord`, fires `ImportFinished`. Runs in a transaction and suppresses per-row events. |
-| `LangExporter` | Reads messages back out (optionally approved-only), inflates dotted keys to nested arrays and writes PHP/JSON files, fires `ExportFinished`. |
-| `LangReader` / `LangWriter` | The only file-format code. Reader flattens with `Arr::dot`; writer inflates, sorts and pretty-prints. |
-| `Message` (model) | Central record. Fires `MessageSaved` whenever a value changes, carrying the old value plus an optional "stamp" (reason/author/meta) used for revisions. `withStamp()` brackets a stamped save so the context can never leak. |
-| `Inspector` | Runs the configured `QualityCheck` list against a message versus its source, persists `QualityIssue` rows, and applies auto-fixes. |
-| `MachineTranslation` | Builds a context-rich `TranslationRequest` (glossary + usages + siblings + tone), delegates to a `Translator`, applies the best result, and logs `AiUsage`. |
-| `AiTranslator` / `FakeTranslator` | The two `Translator` implementations. `AiTranslator` drives a `laravel/ai` structured-output agent; `FakeTranslator` is deterministic for tests and local use. |
-| `Glossary` | CRUD for terms + per-locale definitions, and term matching used by AI prompts and the glossary check. |
-| `RevisionRollback` | Restore a message to a revision, or bulk-undo changes by author/date. |
-| `Insights` / `BundleCoverage` | Cached coverage (per locale and per bundle), velocity, stale and leaderboard analytics. The cache is flushed automatically on writes and imports. |
-| `UsageScanner` / `LooseStringScanner` | Source-code scanners for key usage (context) and hardcoded strings. |
+Everything is driven by `config/translations.php`. The two settings you'll touch first:
 
-**How they interact:** the facade delegates to `TranslationManager`, which calls importer/exporter
-directly and resolves the rest from the container on demand. Writes go through the `Message` model,
-whose `MessageSaved` event drives revisions and quality checks via listeners — so history and
-validation happen no matter *who* changed the value (manual, AI, or rollback). Bulk imports run
-inside a transaction with model events suppressed, so they neither bloat history with a revision per
-imported string nor run inline quality on every row — validate imported catalogs with
-`translations:validate` afterwards.
+```php
+'source_locale' => env('TRANSLATIONS_SOURCE_LOCALE', 'en'),  // the language you author in
+'lang_path'     => env('TRANSLATIONS_LANG_PATH', lang_path()), // where import reads / export writes
+```
+
+All tables are prefixed (default `tx_`) and can live on a dedicated connection, so the package never
+clashes with your schema:
+
+```php
+'database' => [
+    'connection' => env('TRANSLATIONS_DB_CONNECTION'),
+    'prefix'     => env('TRANSLATIONS_DB_PREFIX', 'tx_'),
+],
+```
+
+See the [configuration reference](#configuration-reference) for every key.
 
 ---
 
-## 5. Public API (developer experience)
+## How it's modelled
 
-### Facade
+Four core records describe your catalog:
+
+| Record | Table | What it is |
+| --- | --- | --- |
+| **Locale** | `tx_locales` | A language (`en`, `es`, …). Exactly one is the **source** (`is_source = true`). |
+| **Bundle** | `tx_bundles` | A language file — `auth.php`, the JSON bundle (`_json`), or a vendor namespace. |
+| **Phrase** | `tx_phrases` | A translation key within a bundle (e.g. `failed`, `nested.key`), with detected placeholders/HTML/plural flags. |
+| **Message** | `tx_messages` | The translated value of one phrase in one locale, with a [status](#enums). |
+
+A dotted key like `auth.failed` resolves to bundle `auth` + phrase `failed`. Nested lang files use
+their slash path as the bundle name (`filament/resources/bundle-resource.title`), matching Laravel's
+own group convention. Keys with no dot live in the JSON bundle (`_json`).
+
+Every message carries a **status** (`open` → `draft`/`pending_review` → `approved`). Writing a value
+fires a `MessageSaved` event that records a revision, runs quality checks, and flushes analytics.
+
+---
+
+## Usage
+
+Everything is reachable from the `Translations` facade, or by resolving the underlying classes from
+the container (`app(TranslationManager::class)`, `app(Inspector::class)`, …). The examples use the
+facade.
+
+### Reading and writing translations
 
 ```php
 use Syriable\Translations\Facades\Translations;
 
-// Values
-Translations::set('cart.checkout', 'Checkout', 'en');
-Translations::set('cart.checkout', 'Pagar', 'es', ['by' => 'maria', 'reason' => 'manual']);
-Translations::get('cart.checkout', 'es');          // 'Pagar'
-Translations::has('cart.checkout', 'es');          // true
-Translations::forget('cart.checkout', 'es');       // clear one locale
-Translations::all('es');                            // ['cart.checkout' => ..., ...]
+// Read a value for a locale (defaults to the source locale when omitted)
+Translations::get('cart.checkout', 'es');     // 'Pagar' or null
+Translations::has('cart.checkout', 'es');     // bool
 
-// Locales
-Translations::addLocale('de');                      // seeds open messages for every phrase
-Translations::locales();
+// Write a value — creates the phrase (and seeds every locale) on demand
+Translations::set('cart.checkout', 'Pagar', 'es');
 
-// Sync
-Translations::import(['fresh' => true]);
-Translations::export(['locale' => 'es']);
+// With metadata recorded on the revision
+Translations::set('cart.checkout', 'Pagar', 'es', [
+    'by'     => 'maria',                          // author, stored on the revision
+    'reason' => 'manual',                         // manual|import|ai|rollback|bulk
+    'status' => \Syriable\Translations\Enums\MessageStatus::Approved,
+    'meta'   => ['source' => 'support-ticket'],
+]);
 
-// AI
-Translations::translate('cart.checkout', 'de');     // one key
-Translations::ai()->translateOpen($germanLocale);   // every untranslated message
+// Clear a single locale's value (keeps the phrase), or delete the phrase entirely
+Translations::forget('cart.checkout', 'es');   // value → null, status → open
+Translations::forget('cart.checkout');         // deletes the phrase across all locales
 
-// Quality, glossary, revisions, analytics, review
-Translations::quality()->scan();
-Translations::glossary()->define('invoice');
-Translations::revisions()->byMember('maria');
-Translations::insights()->dashboard();
-Translations::insights()->coverage();         // progress per locale
-Translations::insights()->bundleCoverage();   // progress per bundle (lang file)
-Translations::review()->approve($message, 'lead-reviewer');
+// Every value for a locale, keyed by dotted key
+Translations::all('es');                       // ['cart.checkout' => 'Pagar', ...]
 ```
 
-### Service / container style
+`set()` is wrapped in a database transaction and returns the saved `Message`.
 
-Every sub-service is bound in the container, so you can inject it instead of using the facade:
+### Locales
 
 ```php
-use Syriable\Translations\TranslationManager;
-use Syriable\Translations\Quality\Inspector;
+Translations::locales();                       // Collection<Locale>, ordered by code
 
-app(TranslationManager::class)->get('cart.checkout', 'es');
-app(Inspector::class)->scan(localeId: 3);
+// Add a target locale — metadata (name, native name, RTL) is auto-detected and every
+// existing phrase is seeded an "open" message for it
+Translations::addLocale('de');
+
+// Mark a locale as the source
+Translations::addLocale('en', ['is_source' => true]);
 ```
 
-### Swapping the AI engine
+### Importing and exporting language files
 
-`Translator` is a one-method contract, so tests and custom providers need no mocking:
+Import reads PHP (including nested directories), JSON and vendor namespace files from `lang_path`
+into the database. The whole import runs in a transaction and suppresses per-row events, so a large
+or `--fresh` import never bloats history or leaves a half-written catalog behind.
+
+```php
+$summary = Translations::import();                       // returns an ImportSummary
+$summary = Translations::import(['fresh' => true]);      // clear everything first
+$summary = Translations::import(['overwrite' => false]); // keep existing values
+
+$summary->localeCount;  // 3
+$summary->phraseCount;  // 412
+$summary->createdCount; // 1180
+$summary->updatedCount; // 0
+```
+
+Export writes the database back to disk, preserving nesting, key sorting, plurals and Unicode:
+
+```php
+Translations::export();                          // everything
+Translations::export(['locale' => 'es']);        // one locale
+Translations::export(['bundle' => 'auth']);      // one bundle
+```
+
+Set `export.approved_only` in config to export only reviewer-approved strings.
+
+> Imports are the catalog's source of truth and skip per-row quality/revisions; run
+> `php artisan translations:validate` afterwards to check imported strings.
+
+### AI translation
+
+Requires `laravel/ai` and `ai.enabled = true`. Translations are produced through a swappable
+`Translator` contract, so the engine can be faked in tests with no HTTP.
+
+```php
+// Translate one key into a locale (writes the result, marks it ai_generated)
+Translations::translate('cart.checkout', 'de');
+
+// The AI service for finer control
+$ai = Translations::ai();   // MachineTranslation
+
+$ai->translateOpen($germanLocale);               // translate every untranslated message; returns count
+$ai->suggest($phrase, $germanLocale, ['variants' => 3]); // TranslationResult, without saving
+$ai->apply($phrase, $germanLocale, [             // translate + save the best variant
+    'tone'     => 'formal',                       // neutral|formal|informal|friendly|technical
+    'glossary' => true,                           // include matching glossary terms in the prompt
+    'provider' => 'anthropic',                    // validated against ai.allowed_providers
+    'by'       => 'ai-bot',
+]);
+$ai->estimate($phraseIds, 'de');                 // ['phrase_count','target_locale','estimated_cost']
+```
+
+Prompts are context-aware (glossary terms, developer notes, where the key is used, sibling keys) and
+**fence untrusted context** so it can't act as instructions. Every call is logged to `tx_ai_usages`
+with an estimated cost from `ai.cost_rates`.
+
+**Swapping the engine** (e.g. in tests) is a one-liner — `Translator` has a single method:
 
 ```php
 use Syriable\Translations\Contracts\Translator;
@@ -196,181 +246,333 @@ $this->app->instance(Translator::class, new FakeTranslator(
 ));
 ```
 
----
+### Quality checks
 
-## 6. Internal flow
+Eight pluggable checks compare each translation against its source. They run automatically on every
+save (when `quality.run_on_save` is on) and on demand.
 
-```
-set()      → DB transaction { resolve/create phrase → withStamp(reason, by) { Message::save() } }
-                                                            └─ MessageSaved
-                                                                 ├─ RecordRevision     → revisions row
-                                                                 ├─ RunQualityChecks    → quality_issues rows
-                                                                 └─ FlushInsightsCache  → drop analytics cache
+```php
+$quality = Translations::quality();   // Inspector
 
-import()   → DB transaction + events suppressed { read php/json/vendor → upsert phrase + message
-           → seed missing target } → ImportRecord → ImportFinished → flush cache → (opt. context scan)
+$quality->scan();                     // check every translated message; returns a stats array
+$quality->scan($localeId);            // limit to one locale
+// ['error' => 2, 'warning' => 5, 'info' => 1, 'checked' => 412]
 
-export()   → load messages (approved-only?) → inflate dotted keys → write php/json → ExportFinished
-
-translate()→ build source text → gather glossary + usages + siblings → Translator::translate()
-           → apply best variant (ai_generated=true) → AiUsage log → MessageSaved (revision + checks)
-
-validate() → for each translated message → run checks vs source → persist issues → auto-fix fixable
+$quality->inspect($message);          // array<Issue>, without persisting
+$quality->inspectAndStore($message);  // persist QualityIssue rows for one message
+$quality->fix($qualityIssue);         // auto-fix a fixable issue (whitespace, casing); returns bool
 ```
 
+| Check | Severity | Auto-fix |
+| --- | --- | --- |
+| `missing_placeholder` — a `:name`/`{count}` from the source is missing | error | — |
+| `unexpected_placeholder` — a placeholder not in the source | warning | — |
+| `html_tag_mismatch` — HTML tags differ from the source | error | — |
+| `length_ratio` — translation length is outside the expected band | warning | — |
+| `whitespace` — leading/trailing whitespace differs | warning | ✅ |
+| `casing` — first-letter capitalization differs | info | ✅ |
+| `url_email` — a URL or email was altered/dropped | error | — |
+| `glossary` — a glossary term wasn't applied | warning | — |
+
+Disable a check by removing its class from `quality.checks`, or add your own implementing
+`Syriable\Translations\Contracts\QualityCheck`.
+
+### Glossary
+
+Per-locale approved terminology that feeds both AI prompts and the glossary quality check.
+
+```php
+$glossary = Translations::glossary();   // Glossary
+
+$term = $glossary->define('invoice', note: 'billing document', wholeWord: true);
+$glossary->translate($term, $spanishLocale->id, 'factura', approvedBy: 'maria');
+
+$glossary->pairsFor('Download your invoice', $spanishLocale->id);  // ['invoice' => 'factura']
+$glossary->matching('Download your invoice', $spanishLocale->id);  // Collection<Term>
+$glossary->forget($term);
+```
+
+### Revision history
+
+Every value change is recorded in `tx_revisions`. Roll a message back, or undo a batch of changes.
+
+```php
+$revisions = Translations::revisions();   // RevisionRollback
+
+$revisions->toRevision($revision);                       // restore a message to a past revision
+$revisions->byMember('maria');                           // undo every change a contributor made
+$revisions->byMember('maria', from: '2026-01-01', to: '2026-02-01');
+$revisions->afterDate('2026-06-01', localeId: $es->id);  // undo changes after a cutoff
+```
+
+Prune old history with `php artisan translations:prune-revisions` (keeps the latest per message).
+
+### Review workflow
+
+When `review.enabled` is on, non-reviewer saves land in `pending_review` instead of `approved`.
+
+```php
+$review = Translations::review();   // ReviewFlow
+
+use Syriable\Translations\Enums\MemberRole;
+
+$review->statusForSave(MemberRole::Translator);   // MessageStatus::PendingReview
+$review->statusForSave(MemberRole::Reviewer);     // MessageStatus::Approved
+
+$review->approve($message, 'lead-reviewer');
+$review->reject($message, 'Too informal', 'lead-reviewer');
+```
+
+> The actor string is **advisory** — it's recorded, not enforced. Authorization is your application's
+> job; gate access with `MemberRole` or your own policies. See [Security](#security).
+
+### Analytics
+
+```php
+$insights = Translations::insights();   // Insights
+
+$insights->dashboard();          // cached bundle of everything below
+$insights->coverage();           // per-locale: total / translated / approved / percent
+$insights->bundleCoverage();     // per-bundle progress (per lang file)
+$insights->overallCoverage();    // single float across all target locales
+$insights->leaderboard();        // top contributors by change count
+$insights->velocity(days: 30);   // changes per day
+$insights->stale($localeId);     // messages older than analytics.stale_after_days
+$insights->flush();              // drop the cache (also flushed automatically on writes/imports)
+```
+
+### Scanning your source code
+
+```php
+// Record where each translation key is used (for richer AI context)
+Translations::scanUsage();              // scans config('translations.scanning.paths')
+Translations::scanUsage('resources/views');
+
+// Detect hardcoded, untranslated strings (false-positive filter + ignore list)
+Translations::scanLoose();
+```
+
+Both return a stats array. Run them in the background with the `--queue` flag on the corresponding
+commands, or set `scanning.scan_after_import` to queue a usage scan after every import.
+
+### Activity log
+
+A small recorder for auditing arbitrary member actions:
+
+```php
+use Syriable\Translations\Support\ActivityRecorder;
+
+app(ActivityRecorder::class)->log('glossary.updated', $term, ['field' => 'value'], memberId: 'maria');
+```
+
 ---
 
-## 7. Configuration
+## API reference
 
-A single `config/translations.php`. Highlights and the "why":
+Every method on the `Translations` facade (backed by `TranslationManager`):
 
-| Key | Why it exists |
+| Method | Returns | Description |
+| --- | --- | --- |
+| `get(string $key, ?string $locale = null)` | `?string` | Value for a key, or `null`. |
+| `has(string $key, ?string $locale = null)` | `bool` | Whether a value exists. |
+| `set(string $key, string $value, ?string $locale = null, array $options = [])` | `Message` | Write a value (transactional); creates the phrase on demand. Options: `by`, `reason`, `status`, `meta`. |
+| `forget(string $key, ?string $locale = null)` | `void` | Clear one locale's value, or delete the phrase. |
+| `all(?string $locale = null)` | `array` | All values for a locale, keyed by dotted key. |
+| `locales()` | `Collection` | All locales. |
+| `addLocale(string $code, array $attributes = [])` | `Locale` | Create a locale and seed its messages. |
+| `import(array $options = [])` | `ImportSummary` | Disk → DB. Options: `fresh`, `overwrite`, `lang_path`, `source`, `triggered_by`. |
+| `export(array $options = [])` | `ExportSummary` | DB → disk. Options: `locale`, `bundle`, `lang_path`, `source`. |
+| `translate(string $key, string $locale, array $options = [])` | `?Message` | AI-translate a single key and save it. |
+| `ai()` | `MachineTranslation` | The AI translation service. |
+| `quality()` | `Inspector` | The quality-check service. |
+| `glossary()` | `Glossary` | The glossary service. |
+| `insights()` | `Insights` | The analytics service. |
+| `revisions()` | `RevisionRollback` | Revision rollback service. |
+| `review()` | `ReviewFlow` | The review/approval service. |
+| `scanUsage(?string $path = null)` | `array` | Scan source for key usages. |
+| `scanLoose(?string $path = null)` | `array` | Detect hardcoded strings. |
+
+The sub-services:
+
+| Service | Methods |
 | --- | --- |
-| `source_locale` | The language you author in; every other locale is a translation target. |
-| `lang_path` | Where import reads and export writes. |
-| `database.prefix` / `database.connection` | Every table is prefixed (default `tx_`) and can live on a dedicated connection, so the package never clashes with your schema. |
-| `import.detect_*`, `import.scan_vendor`, `import.exclude_files` | Control metadata extraction and which files participate. |
-| `export.sort_keys`, `export.exclude_empty`, `export.approved_only` | Shape the files you ship — e.g. only export reviewer-approved strings. |
-| `review.enabled` | Turn the approval gate on/off. |
-| `revisions.enabled`, `revisions.retention_days` | History tracking and pruning. |
-| `ai.*` | Provider, model, variant count, batch size and per-model `cost_rates` (USD per 1M chars) used for estimates. `allowed_providers` restricts which providers a caller may request. |
-| `quality.checks`, `quality.run_on_save`, `quality.length_ratio.overrides` | The pluggable check list and per-language length tuning. |
-| `scanning.paths`, `scanning.extensions`, `scanning.scan_after_import`, `scanning.loose.*` | Where and how the source scanners look, and whether import queues a usage scan. |
-| `analytics.*` | Cache TTL, stale threshold and leaderboard size (the dashboard cache is also flushed on every write/import). |
-| `queue.*` | Connection/queue for the background jobs (`--queue` flags and `scanning.scan_after_import`). |
-
-Disabling a feature is configuration, not code: remove a class from `quality.checks` to drop a check,
-set `ai.enabled=false` to refuse AI calls, set `review.enabled=false` to auto-approve.
+| `MachineTranslation` | `suggest(Phrase, Locale, array)`, `apply(Phrase, Locale, array)`, `translateOpen(Locale, array): int`, `estimate(array $phraseIds, string $locale): array` |
+| `Inspector` | `inspect(Message): array`, `inspectAndStore(Message): array`, `scan(?int $localeId): array`, `fix(QualityIssue): bool` |
+| `Glossary` | `define(string, ?string, bool, bool, ?string): Term`, `translate(Term, int, string, ?string): TermDefinition`, `forget(Term)`, `matching(string, int): Collection`, `pairsFor(string, int): array` |
+| `RevisionRollback` | `toRevision(Revision, ?string): Message`, `byMember(string, ?string $from, ?string $to, ?string $by): array`, `afterDate(string, ?int $localeId, ?string $by): array` |
+| `Insights` | `dashboard()`, `coverage()`, `bundleCoverage(?string)`, `overallCoverage(): float`, `leaderboard()`, `velocity(int $days = 30)`, `stale(?int)`, `staleCounts()`, `flush()` |
+| `ReviewFlow` | `statusForSave(?MemberRole): MessageStatus`, `approve(Message, ?string): Message`, `reject(Message, string $note, ?string): Message` |
 
 ---
-
-## 8. Testing strategy
-
-Run with `composer test` (Pest 4 + Orchestra Testbench, in-memory SQLite).
-
-- **Unit** — pure logic with no database: `PlaceholderScanner` (placeholder/HTML/plural/URL extraction)
-  and `LangWriter`/`LangReader` round-trips (nesting, sorting, Unicode JSON).
-- **Feature** — full Laravel integration:
-  - import/export across PHP, JSON, vendor and nested files, plus the `--no-overwrite` path;
-  - import hardening: atomic rollback on failure, and bulk imports skipping per-row revisions/quality;
-  - the `get`/`set`/`forget`/`addLocale` API including on-demand phrase creation and locale seeding;
-  - revisions: capture on change, single rollback, bulk rollback by author, stamp isolation, and the disabled-config path;
-  - quality: missing-placeholder errors, HTML mismatches, auto-fix, and "source isn't checked against itself";
-  - AI: applying a translation through a `FakeTranslator`, glossary/context forwarding, prompt fencing, the provider allowlist, and whole-locale translation with usage logging;
-  - scanning: recording key usages and detecting hardcoded strings while skipping translated ones;
-  - bundle coverage: zero phrases, zero targets, partial and full per-bundle progress;
-  - job wiring: `--queue` flags and scan-after-import dispatch onto the configured queue;
-  - glossary + review workflow status transitions.
-- **Edge cases covered**: empty target files, keys without a dot (JSON bundle), nested dotted keys,
-  nested lang directories and filename collisions, RTL/Unicode values, the source locale never
-  validating against itself, and revisions short-circuiting when the value didn't actually change.
-
-The `Translator` contract means AI paths are tested deterministically with no HTTP and no mocking.
-
----
-
-## 9. Migration strategy
-
-This is a clean-room package with its own namespace (`Syriable\Translations`), table prefix (`tx_`)
-and class names, so it installs **alongside** an existing setup without collisions. Recommended path:
-
-1. **Install & publish**
-
-   ```bash
-   composer require syriable/laravel-translations
-   php artisan vendor:publish --tag=translations-config
-   php artisan migrate
-   ```
-
-2. **Re-seed from your lang files (recommended).** Both original packages were ultimately a cache of
-   your lang files, so the cleanest migration is to re-import the source of truth:
-
-   ```bash
-   php artisan translations:import
-   ```
-
-   This rebuilds locales, bundles, phrases and messages, re-deriving placeholders/HTML/plural flags.
-
-**Coming from the free package (`outhebox/laravel-translations`)**
-   - Concept map: `Language → Locale`, `Group → Bundle`, `TranslationKey → Phrase`,
-     `Translation → Message`, `Contributor → Member`. Statuses map
-     `untranslated → open`, `translated → draft`, `needs_review → pending_review`, `approved → approved`.
-   - The `TranslationSaved` event becomes `MessageSaved`; `ImportCompleted` becomes `ImportFinished`.
-   - If you must preserve primary keys/timestamps instead of re-importing, copy table-to-table using the
-     map above; otherwise prefer the re-import.
-
-**Coming from the pro package (`outhebox/laravel-translations-pro`)**
-   - Pro tables map onto the support tables: `revisions → tx_revisions`,
-     `activity_logs → tx_activities`, `ai_usage_logs → tx_ai_usages`,
-     `glossary_terms → tx_terms`, `glossary_translations → tx_term_definitions`,
-     `validation_issues → tx_quality_issues`, `key_contexts → tx_phrase_usages`,
-     `hardcoded_strings → tx_loose_strings`, `hardcoded_ignores → tx_ignored_strings`.
-   - AI config moves from `translations-pro.php` into the `ai`, `quality` and `scanning` sections of the
-     single `translations.php`. Set `TRANSLATIONS_AI=true` and your provider/key to re-enable AI.
-   - History and glossary are best re-imported from a fresh scan/translation pass; only revision history
-     is non-reproducible, so copy `tx_revisions` table-to-table if you need to keep it.
-
-3. **Remove the old packages** once verified:
-
-   ```bash
-   composer remove outhebox/laravel-translations outhebox/laravel-translations-pro
-   ```
-
----
-
-## Security & trust model
-
-This is a backend-only toolkit with no auth layer, designed to be wrapped by your own UI — so a few
-responsibilities sit with the consuming application:
-
-- **Importing `.php` lang files executes them** (`require`, exactly like Laravel core). Only import
-  language directories you trust; set `import.scan_vendor` to `false` to skip vendor lang files.
-- **Models use `$guarded = []`.** Validate and whitelist input before mass-assigning; the package
-  ships no controllers but is meant to be wrapped, so `status`, `is_source`, `ai_generated` etc. are
-  otherwise freely assignable.
-- **History and AI prompts store values in plaintext.** Don't put secrets in translation strings;
-  prune revision history with `translations:prune-revisions`.
-- **AI output is untrusted text** — escape it on render. Prompts already fence untrusted context so it
-  can't act as instructions.
-- **Authorization is yours.** Review/approval actor strings are advisory, not enforced; gate access
-  with `MemberRole` (`canTranslate()` / `canReview()` / `canManage()`) or your own policies.
-
-See [`SECURITY.md`](SECURITY.md) for the full trust model and how to report a vulnerability.
-
----
-
-## Installation
-
-```bash
-composer require syriable/laravel-translations
-php artisan translations:install --import
-```
-
-AI features are optional and only require the SDK when you use them:
-
-```bash
-composer require laravel/ai
-```
 
 ## Artisan commands
 
 ```
 translations:install            Publish config, migrate, optionally --import
-translations:import             Lang files -> DB        (--fresh, --no-overwrite)
-translations:export             DB -> lang files        (--locale=, --bundle=)
+translations:import             Lang files → DB           (--fresh, --no-overwrite)
+translations:export             DB → lang files           (--locale=, --bundle=)
 translations:status             Coverage per locale/bundle (--locale=, --bundles, --bundle=)
-translations:translate {locale} AI translate            (--key=, --all, --provider=, --queue)
-translations:validate           Run quality checks      (--locale=, --fix, --queue)
+translations:translate {locale} AI translate              (--key=, --all, --provider=, --queue)
+translations:validate           Run quality checks        (--locale=, --fix, --queue)
 translations:scan-usage         Record where keys are used (--path=, --queue)
 translations:scan-loose         Detect hardcoded strings   (--path=, --queue)
-translations:prune-revisions    Prune old history       (--days=, --dry-run)
+translations:prune-revisions    Prune old revision history (--days=, --dry-run)
 ```
+
+---
+
+## Configuration reference
+
+```php
+return [
+    // The language you author in; every other locale is a translation target.
+    'source_locale' => env('TRANSLATIONS_SOURCE_LOCALE', 'en'),
+
+    // Where import reads and export writes.
+    'lang_path' => env('TRANSLATIONS_LANG_PATH', lang_path()),
+
+    // Package tables are prefixed and may use a dedicated connection.
+    'database' => [
+        'connection' => env('TRANSLATIONS_DB_CONNECTION'),
+        'prefix'     => env('TRANSLATIONS_DB_PREFIX', 'tx_'),
+    ],
+
+    'import' => [
+        'scan_vendor'         => true,   // import vendor/<ns>/<locale>/*.php
+        'detect_placeholders' => true,   // extract :name and {count}
+        'detect_html'         => true,
+        'detect_plural'       => true,
+        'exclude_files'       => ['pagination.php'],
+    ],
+
+    'export' => [
+        'sort_keys'     => true,
+        'exclude_empty' => true,
+        'approved_only' => env('TRANSLATIONS_EXPORT_APPROVED_ONLY', false),
+    ],
+
+    'review' => [
+        'enabled' => env('TRANSLATIONS_REVIEW', true),
+    ],
+
+    'revisions' => [
+        'enabled'        => true,
+        'retention_days' => 90,
+    ],
+
+    'ai' => [
+        'enabled'           => env('TRANSLATIONS_AI', false),
+        'provider'          => env('TRANSLATIONS_AI_PROVIDER', 'openai'),
+        'model'             => env('TRANSLATIONS_AI_MODEL', 'gpt-4o-mini'),
+        'allowed_providers' => ['openai', 'anthropic', 'gemini', 'groq', 'mistral', 'xai', 'deepseek', 'openrouter', 'ollama', 'cohere'],
+        'variants'          => 3,
+        'batch_size'        => 20,
+        'cost_rates'        => [ /* model => ['input' => ..., 'output' => ...] in USD per 1M chars */ ],
+    ],
+
+    'quality' => [
+        'run_on_save'  => true,
+        'checks'       => [ /* the eight QualityCheck classes */ ],
+        'length_ratio' => ['min' => 0.5, 'max' => 2.0, 'overrides' => []],
+    ],
+
+    'scanning' => [
+        'paths'             => ['app', 'resources/views', 'resources/js'],
+        'extensions'        => ['php', 'blade.php', 'vue', 'jsx', 'tsx'],
+        'scan_after_import' => env('TRANSLATIONS_SCAN_AFTER_IMPORT', false),
+        'loose'             => ['min_words' => 2, 'min_length' => 5],
+    ],
+
+    'analytics' => [
+        'cache_ttl'        => 3600,
+        'stale_after_days' => 30,
+        'leaderboard_limit' => 10,
+    ],
+
+    'queue' => [
+        'connection' => env('TRANSLATIONS_QUEUE_CONNECTION'),
+        'name'       => env('TRANSLATIONS_QUEUE_NAME', 'translations'),
+    ],
+];
+```
+
+---
+
+## Events
+
+Hook into the translation lifecycle with standard Laravel listeners:
+
+| Event | Fired when | Payload |
+| --- | --- | --- |
+| `MessageSaved` | a message's value changes | `$message`, `$oldValue`, `$reason`, `$changedBy`, `$meta` |
+| `ImportFinished` | an import completes | `$summary` (`ImportSummary`) |
+| `ExportFinished` | an export completes | `$summary` (`ExportSummary`) |
+| `PhraseCreated` | a new phrase is created via the API | `$phrase` |
+| `LocaleAdded` | a new locale is added | `$locale` |
+
+Internally, `MessageSaved` drives `RecordRevision`, `RunQualityChecks` and `FlushInsightsCache`;
+`ImportFinished` drives `ScanUsageAfterImport` (when enabled) and a cache flush.
+
+---
+
+## Models
+
+All models live in `Syriable\Translations\Models` and use the configured table prefix.
+
+| Model | Notable relations / methods |
+| --- | --- |
+| `Locale` | `messages()`, `members()`; scopes `enabled()`, `targets()`; static `source()`, `flushSourceCache()` |
+| `Bundle` | `phrases()`; `isJson()`, `label()`; scope `withTranslationProgress()`, `translationProgressPercent()` |
+| `Phrase` | `bundle()`, `messages()`, `usages()`; `dottedKey()`; scope `missingIn(int $localeId)` |
+| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`; scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()` |
+| `Member` | `locales()`; `role` cast to `MemberRole` |
+| `Revision` | `message()`; scopes `forLocale(int)`, `between(?string, ?string)` |
+| `QualityIssue` | `message()`, `locale()`; `severity` cast to `Severity` |
+| `Term` / `TermDefinition` | `definitions()` / `term()`, `locale()`; `definitionFor(int $localeId)` |
+| `AiUsage`, `Activity`, `PhraseUsage`, `LooseString`, `IgnoredString`, `ImportRecord`, `ExportRecord` | audit / support records |
+
+---
+
+## Enums
+
+In `Syriable\Translations\Enums`:
+
+- **`MessageStatus`** — `Open`, `Draft`, `PendingReview`, `Approved`. Methods: `label()`, `isTranslated()`.
+- **`MemberRole`** — `Owner`, `Admin`, `Reviewer`, `Translator`, `Viewer`. Methods: `level()`, `isAtLeast()`, `canTranslate()`, `canReview()`, `canManage()`.
+- **`RevisionReason`** — `Manual`, `Import`, `Ai`, `Rollback`, `Bulk`. Method: `label()`.
+- **`Severity`** — `Error`, `Warning`, `Info`. Method: `order()`.
+- **`LooseStringStatus`** — `Pending`, `Converted`, `Ignored`, `Resolved`.
+
+---
+
+## Testing
+
+```bash
+composer test          # vendor/bin/pest
+vendor/bin/pint        # code style
+```
+
+The suite runs on Pest 4 + Orchestra Testbench against in-memory SQLite. AI paths are tested through
+the `Translator` contract with `FakeTranslator`, so no test makes a network call.
+
+---
+
+## Security
+
+This is a backend-only toolkit with no auth layer; a few responsibilities sit with the consuming
+application (importing `.php` lang files executes them, models are mass-assignable, AI output is
+untrusted, authorization is yours). Read [`SECURITY.md`](SECURITY.md) for the full trust model and
+how to report a vulnerability.
 
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). Run `composer test` and `vendor/bin/pint --test` before
 opening a PR.
 
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md).
+
 ## License
 
-MIT.
+The MIT License (MIT). See [`LICENSE.md`](LICENSE.md).
