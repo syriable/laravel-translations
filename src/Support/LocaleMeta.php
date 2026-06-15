@@ -40,6 +40,7 @@ class LocaleMeta
             'name' => $name,
             'native_name' => $native,
             'direction' => in_array($base, self::RTL, true) ? Direction::Rtl : Direction::Ltr,
+            'code' => $code,
         ];
     }
 

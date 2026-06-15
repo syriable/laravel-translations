@@ -1,5 +1,6 @@
 <?php
 
+use Syriable\Translations\Enums\Direction;
 use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Message;
@@ -45,4 +46,17 @@ it('seeds messages for newly added locales', function (): void {
 
     $de = Locale::query()->where('code', 'de')->first();
     expect(Message::query()->where('locale_id', $de->id)->count())->toBeGreaterThan(0);
+});
+
+it('allows custom locale attributes to override locale meta defaults', function (): void {
+    $locale = Translations::addLocale('xx-custom', [
+        'name' => 'Custom Locale',
+        'native_name' => 'Locale personnalisée',
+        'direction' => Direction::Rtl,
+    ]);
+
+    expect($locale->code)->toBe('xx-custom')
+        ->and($locale->name)->toBe('Custom Locale')
+        ->and($locale->native_name)->toBe('Locale personnalisée')
+        ->and($locale->direction)->toBe(Direction::Rtl);
 });

@@ -120,7 +120,11 @@ class TranslationManager
     {
         $locale = Locale::query()->firstOrCreate(
             ['code' => $code],
-            LocaleMeta::for($code) + ['enabled' => true] + $attributes,
+            array_merge(
+                LocaleMeta::for($code),
+                ['enabled' => true],
+                $attributes,
+            ),
         );
 
         if ($locale->wasRecentlyCreated) {
