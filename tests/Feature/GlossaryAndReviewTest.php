@@ -1,5 +1,6 @@
 <?php
 
+use Syriable\Translations\Enums\MemberRole;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\Locale;
@@ -23,10 +24,10 @@ it('stores and matches glossary terms for a locale', function (): void {
 it('moves non-reviewer saves into pending review when the workflow is enabled', function (): void {
     config()->set('translations.review.enabled', true);
 
-    $status = Translations::review()->statusForSave(Syriable\Translations\Enums\MemberRole::Translator);
+    $status = Translations::review()->statusForSave(MemberRole::Translator);
     expect($status)->toBe(MessageStatus::PendingReview);
 
-    $reviewerStatus = Translations::review()->statusForSave(Syriable\Translations\Enums\MemberRole::Reviewer);
+    $reviewerStatus = Translations::review()->statusForSave(MemberRole::Reviewer);
     expect($reviewerStatus)->toBe(MessageStatus::Approved);
 });
 

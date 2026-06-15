@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Quality\Checks;
 
+use Syriable\Translations\Enums\Severity;
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Quality\Check;
 use Syriable\Translations\Support\Issue;
@@ -33,7 +34,7 @@ class WhitespaceCheck extends Check
 
         return new Issue(
             $this->key(),
-            \Syriable\Translations\Enums\Severity::Warning,
+            Severity::Warning,
             'Leading or trailing whitespace does not match the source string.',
             'Trim the translation to match the source whitespace.',
             true,

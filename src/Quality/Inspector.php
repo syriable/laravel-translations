@@ -6,6 +6,7 @@ use Syriable\Translations\Contracts\QualityCheck;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Models\QualityIssue;
+use Syriable\Translations\Support\Issue;
 
 class Inspector
 {
@@ -20,7 +21,7 @@ class Inspector
         );
     }
 
-    /** @return array<int, \Syriable\Translations\Support\Issue> */
+    /** @return array<int, Issue> */
     public function inspect(Message $message): array
     {
         $source = $this->sourceFor($message);
