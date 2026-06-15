@@ -42,4 +42,15 @@ class LocaleMeta
             'direction' => in_array($base, self::RTL, true) ? Direction::Rtl : Direction::Ltr,
         ];
     }
+
+    public static function all(): array
+    {
+        $locales = [];
+        foreach (self::NAMES as $code => $name) {
+            $locales[$code] = self::for($code);
+        }
+        asort($locales);
+
+        return array_map(fn ($locale) => $locale['name'], $locales);
+    }
 }
