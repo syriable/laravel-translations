@@ -62,10 +62,6 @@ class TranslationsServiceProvider extends ServiceProvider
 
     private function registerCommands(): void
     {
-        if (! $this->app->runningInConsole()) {
-            return;
-        }
-
         $this->commands([
             InstallCommand::class,
             ImportCommand::class,
