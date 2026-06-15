@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
@@ -50,5 +51,12 @@ class Locale extends TranslationModel
     public static function flushSourceCache(): void
     {
         Cache::driver('array')->forget('translations.source-locale');
+    }
+
+    public function flag(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => 'data:image/svg+xml;base64,'.base64_encode(svg('flag-language-'.$this->code)->toHtml()),
+        );
     }
 }
