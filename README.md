@@ -64,7 +64,7 @@ backbone and folds every pro feature into it as a first-class service:
                        │       └─ ScanUsageAfterImport(context)                         │
                        │                                                                │
                        │  on-demand services: AI · Glossary · Insights · Scanners       │
-                       └────────────────────────────────────────────────────────────────┘
+                       └───────────────────────────────────────────────────────────┘
 ```
 
 The same five core tables the free package used are still the spine; the nine pro tables become
@@ -233,7 +233,7 @@ A single `config/translations.php`. Highlights and the "why":
 | `export.sort_keys`, `export.exclude_empty`, `export.approved_only` | Shape the files you ship — e.g. only export reviewer-approved strings. |
 | `review.enabled` | Turn the approval gate on/off. |
 | `revisions.enabled`, `revisions.retention_days` | History tracking and pruning. |
-| `ai.*` | Provider, model, variant count, batch size and per-model `cost_rates` (USD per 1M chars) used for estimates. |
+| `ai.*` | Provider, model, variant count, batch size and per-model `cost_rates` (USD per 1M chars) used for estimates. `allowed_providers` restricts which providers a caller may request. |
 | `quality.checks`, `quality.run_on_save`, `quality.length_ratio.overrides` | The pluggable check list and per-language length tuning. |
 | `scanning.paths`, `scanning.extensions`, `scanning.scan_after_import`, `scanning.loose.*` | Where and how the source scanners look, and whether import queues a usage scan. |
 | `analytics.*` | Cache TTL, stale threshold and leaderboard size (the dashboard cache is also flushed on every write/import). |
@@ -256,7 +256,7 @@ Run with `composer test` (Pest 4 + Orchestra Testbench, in-memory SQLite).
   - the `get`/`set`/`forget`/`addLocale` API including on-demand phrase creation and locale seeding;
   - revisions: capture on change, single rollback, bulk rollback by author, stamp isolation, and the disabled-config path;
   - quality: missing-placeholder errors, HTML mismatches, auto-fix, and "source isn't checked against itself";
-  - AI: applying a translation through a `FakeTranslator`, glossary/context forwarding, and whole-locale translation with usage logging;
+  - AI: applying a translation through a `FakeTranslator`, glossary/context forwarding, prompt fencing, the provider allowlist, and whole-locale translation with usage logging;
   - scanning: recording key usages and detecting hardcoded strings while skipping translated ones;
   - bundle coverage: zero phrases, zero targets, partial and full per-bundle progress;
   - job wiring: `--queue` flags and scan-after-import dispatch onto the configured queue;
@@ -318,6 +318,27 @@ and class names, so it installs **alongside** an existing setup without collisio
 
 ---
 
+## Security & trust model
+
+This is a backend-only toolkit with no auth layer, designed to be wrapped by your own UI — so a few
+responsibilities sit with the consuming application:
+
+- **Importing `.php` lang files executes them** (`require`, exactly like Laravel core). Only import
+  language directories you trust; set `import.scan_vendor` to `false` to skip vendor lang files.
+- **Models use `$guarded = []`.** Validate and whitelist input before mass-assigning; the package
+  ships no controllers but is meant to be wrapped, so `status`, `is_source`, `ai_generated` etc. are
+  otherwise freely assignable.
+- **History and AI prompts store values in plaintext.** Don't put secrets in translation strings;
+  prune revision history with `translations:prune-revisions`.
+- **AI output is untrusted text** — escape it on render. Prompts already fence untrusted context so it
+  can't act as instructions.
+- **Authorization is yours.** Review/approval actor strings are advisory, not enforced; gate access
+  with `MemberRole` (`canTranslate()` / `canReview()` / `canManage()`) or your own policies.
+
+See [`SECURITY.md`](SECURITY.md) for the full trust model and how to report a vulnerability.
+
+---
+
 ## Installation
 
 ```bash
@@ -344,6 +365,11 @@ translations:scan-usage         Record where keys are used (--path=, --queue)
 translations:scan-loose         Detect hardcoded strings   (--path=, --queue)
 translations:prune-revisions    Prune old history       (--days=, --dry-run)
 ```
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Run `composer test` and `vendor/bin/pint --test` before
+opening a PR.
 
 ## License
 
