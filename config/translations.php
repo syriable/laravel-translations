@@ -108,6 +108,7 @@ return [
     |
     | Powered by the laravel/ai SDK. `provider` and `model` choose the default
     | engine; `cost_rates` are USD per 1M characters and feed cost estimates.
+    | Only providers in `allowed_providers` may be requested per-call.
     |
     */
 
@@ -115,6 +116,7 @@ return [
         'enabled' => env('TRANSLATIONS_AI', false),
         'provider' => env('TRANSLATIONS_AI_PROVIDER', 'openai'),
         'model' => env('TRANSLATIONS_AI_MODEL', 'gpt-4o-mini'),
+        'allowed_providers' => ['openai', 'anthropic', 'gemini', 'groq', 'mistral', 'xai', 'deepseek', 'openrouter', 'ollama', 'cohere'],
         'variants' => 3,
         'batch_size' => 20,
         'cost_rates' => [

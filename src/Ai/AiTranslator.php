@@ -10,11 +10,12 @@ class AiTranslator implements Translator
 {
     public function translate(TranslationRequest $request): TranslationResult
     {
-        $provider = $request->provider ?? config('translations.ai.provider', 'openai');
+        $requested = AiProviders::sanitize($request->provider);
+        $provider = $requested ?? config('translations.ai.provider', 'openai');
         $model = $request->model ?? config('translations.ai.model');
 
         $agent = new PhraseTranslationAgent($request);
-        $response = $agent->prompt($request->text, ...array_filter(['provider' => $request->provider]));
+        $response = $agent->prompt($request->text, ...array_filter(['provider' => $requested]));
 
         $variants = collect($response['suggestions'] ?? [])
             ->map(fn (array $suggestion) => [

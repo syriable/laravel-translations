@@ -8,8 +8,12 @@ use Syriable\Translations\Models\TermDefinition;
 
 class Glossary
 {
+    private ?Collection $cache = null;
+
     public function define(string $source, ?string $note = null, bool $caseSensitive = false, bool $wholeWord = false, ?string $createdBy = null): Term
     {
+        $this->cache = null;
+
         return Term::query()->updateOrCreate(
             ['source' => $source],
             [
@@ -23,6 +27,8 @@ class Glossary
 
     public function translate(Term $term, int $localeId, string $value, ?string $approvedBy = null): TermDefinition
     {
+        $this->cache = null;
+
         return $term->definitions()->updateOrCreate(
             ['locale_id' => $localeId],
             ['value' => $value, 'approved_by' => $approvedBy],
@@ -31,16 +37,16 @@ class Glossary
 
     public function forget(Term $term): void
     {
+        $this->cache = null;
+
         $term->delete();
     }
 
     /** @return Collection<int, Term> */
     public function matching(string $text, int $localeId): Collection
     {
-        return Term::query()
-            ->with(['definitions' => fn ($query) => $query->where('locale_id', $localeId)])
-            ->get()
-            ->filter(fn (Term $term) => $this->mentions($text, $term) && $term->definitions->isNotEmpty())
+        return $this->terms()
+            ->filter(fn (Term $term) => $this->mentions($text, $term) && $term->definitionFor($localeId) !== null)
             ->values();
     }
 
@@ -50,10 +56,16 @@ class Glossary
         $pairs = [];
 
         foreach ($this->matching($text, $localeId) as $term) {
-            $pairs[$term->source] = $term->definitions->first()->value;
+            $pairs[$term->source] = $term->definitionFor($localeId)->value;
         }
 
         return $pairs;
+    }
+
+    /** @return Collection<int, Term> */
+    private function terms(): Collection
+    {
+        return $this->cache ??= Term::query()->with('definitions')->get();
     }
 
     private function mentions(string $text, Term $term): bool
