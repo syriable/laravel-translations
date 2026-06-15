@@ -5,6 +5,7 @@ namespace Syriable\Translations\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Phrase extends TranslationModel
 {
@@ -30,6 +31,11 @@ class Phrase extends TranslationModel
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function sourceMessage(): HasOne
+    {
+        return $this->hasOne(Message::class)->whereRelation('locale', 'is_source', true);
     }
 
     public function usages(): HasMany
