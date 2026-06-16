@@ -29,6 +29,11 @@ class Locale extends TranslationModel
         return $this->hasMany(Message::class);
     }
 
+    public function translatedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class)->translated();
+    }
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(Member::class, config('translations.database.prefix', 'tx_').'member_locale');
@@ -54,10 +59,35 @@ class Locale extends TranslationModel
         Cache::driver('array')->forget('translations.source-locale');
     }
 
+    public function scopeWithTranslationProgressCounts(Builder $query): Builder
+    {
+        return $query->withCount([
+            'messages',
+            'messages as translated_messages_count' => fn (Builder $query) => $query->translated(),
+        ]);
+    }
+
     public function flag(): Attribute
     {
         return Attribute::make(
             get: fn (): string => 'data:image/svg+xml;base64,'.base64_encode(svg('flag-language-'.$this->code)->toHtml()),
+        );
+    }
+
+    public function translationProgress(): Attribute
+    {
+        return Attribute::make(
+            get: function (): int {
+                $total = (int) ($this->messages_count ?? $this->messages()->count());
+
+                if ($total === 0) {
+                    return 0;
+                }
+
+                $translated = (int) ($this->translated_messages_count ?? $this->messages()->translated()->count());
+
+                return (int) round($translated / $total * 100);
+            },
         );
     }
 }
