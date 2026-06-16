@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Events\MessageSaved;
 
@@ -34,6 +35,12 @@ class Message extends TranslationModel
     public function phrase(): BelongsTo
     {
         return $this->belongsTo(Phrase::class);
+    }
+
+    public function sourceMessage(): HasOne
+    {
+        return $this->hasOne(self::class, 'phrase_id', 'phrase_id')
+            ->whereRelation('locale', 'is_source', true);
     }
 
     public function locale(): BelongsTo
