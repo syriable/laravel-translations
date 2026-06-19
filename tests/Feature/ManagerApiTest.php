@@ -60,3 +60,21 @@ it('allows custom locale attributes to override locale meta defaults', function 
         ->and($locale->native_name)->toBe('Locale personnalisée')
         ->and($locale->direction)->toBe(Direction::Rtl);
 });
+
+it('rejects nonsense locale codes', function (): void {
+    Translations::addLocale('sdfsdgv');
+})->throws(InvalidArgumentException::class);
+
+it('does not persist a locale when the code is invalid', function (): void {
+    try {
+        Translations::addLocale('sdfsdgv');
+    } catch (InvalidArgumentException) {
+        // expected
+    }
+
+    expect(Locale::query()->where('code', 'sdfsdgv')->exists())->toBeFalse();
+});
+
+it('accepts well-formed locale codes', function (string $code): void {
+    expect(Translations::addLocale($code)->code)->toBe($code);
+})->with(['es', 'fil', 'pt-BR', 'zh-Hans', 'en_US', 'xx-custom']);

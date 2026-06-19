@@ -5,6 +5,7 @@ namespace Syriable\Translations;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Syriable\Translations\Ai\MachineTranslation;
 use Syriable\Translations\Analytics\Insights;
 use Syriable\Translations\Enums\MessageStatus;
@@ -118,6 +119,12 @@ class TranslationManager
 
     public function addLocale(string $code, array $attributes = []): Locale
     {
+        if (! LocaleMeta::isValidCode($code)) {
+            throw new InvalidArgumentException(
+                "Invalid locale code [{$code}]. Expected a language code like \"en\", \"pt-BR\" or \"zh-Hans\"."
+            );
+        }
+
         $locale = Locale::query()->firstOrCreate(
             ['code' => $code],
             array_merge(

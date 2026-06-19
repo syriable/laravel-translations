@@ -31,6 +31,19 @@ class LocaleMeta
         'uk' => ['Ukrainian', 'Українська'],
     ];
 
+    /**
+     * Determine whether a locale code is well-formed.
+     *
+     * The code must look like a BCP 47 tag: a 2-3 letter primary subtag,
+     * optionally followed by one or more subtags separated by "-" or "_"
+     * (e.g. "en", "pt-BR", "zh-Hans", "xx-custom"). This rejects nonsense
+     * input such as "sdfsdgv".
+     */
+    public static function isValidCode(string $code): bool
+    {
+        return (bool) preg_match('/^[a-z]{2,3}([_-][a-z0-9]{1,8})*$/i', $code);
+    }
+
     public static function for(string $code): array
     {
         $base = strtolower(explode('_', str_replace('-', '_', $code))[0]);
