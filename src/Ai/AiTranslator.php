@@ -15,7 +15,10 @@ class AiTranslator implements Translator
         $model = $request->model ?? config('translations.ai.model');
 
         $agent = new PhraseTranslationAgent($request);
-        $response = $agent->prompt($request->text, ...array_filter(['provider' => $requested]));
+        $response = $agent->prompt($request->text, ...array_filter([
+            'provider' => $provider,
+            'model' => $model,
+        ]));
 
         $variants = collect($response['suggestions'] ?? [])
             ->map(fn (array $suggestion) => [
