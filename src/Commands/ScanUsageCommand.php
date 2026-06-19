@@ -16,14 +16,17 @@ class ScanUsageCommand extends Command
     {
         if ($this->option('queue')) {
             ScanUsageJob::dispatch($this->option('path'));
-            $this->components->info('Usage scan dispatched to the queue.');
+            $this->components->info(__('translations::messages.scan_usage.queued'));
 
             return self::SUCCESS;
         }
 
         $result = $scanner->scan($this->option('path'));
 
-        $this->components->info("Scanned {$result['files_scanned']} files, recorded {$result['usages_found']} usages.");
+        $this->components->info(__('translations::messages.scan_usage.done', [
+            'files' => $result['files_scanned'],
+            'usages' => $result['usages_found'],
+        ]));
 
         return self::SUCCESS;
     }

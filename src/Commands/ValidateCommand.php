@@ -20,7 +20,7 @@ class ValidateCommand extends Command
 
         if ($this->option('queue')) {
             ScanQualityJob::dispatch($localeId);
-            $this->components->info('Quality scan dispatched to the queue.');
+            $this->components->info(__('translations::messages.validate.queued'));
 
             return self::SUCCESS;
         }
@@ -28,13 +28,18 @@ class ValidateCommand extends Command
         $stats = $inspector->scan($localeId);
 
         $this->table(
-            ['Checked', 'Errors', 'Warnings', 'Info'],
+            [
+                __('translations::messages.validate.table.checked'),
+                __('translations::messages.validate.table.errors'),
+                __('translations::messages.validate.table.warnings'),
+                __('translations::messages.validate.table.info'),
+            ],
             [[$stats['checked'], $stats['error'], $stats['warning'], $stats['info']]],
         );
 
         if ($this->option('fix')) {
             $fixed = $this->fixAll($inspector, $localeId);
-            $this->components->info("Auto-fixed {$fixed} issues.");
+            $this->components->info(__('translations::messages.validate.fixed', ['count' => $fixed]));
         }
 
         return $stats['error'] > 0 ? self::FAILURE : self::SUCCESS;

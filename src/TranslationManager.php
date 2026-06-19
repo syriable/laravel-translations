@@ -121,7 +121,7 @@ class TranslationManager
     {
         if (! LocaleMeta::isValidCode($code)) {
             throw new InvalidArgumentException(
-                "Invalid locale code [{$code}]. Expected a language code like \"en\", \"pt-BR\" or \"zh-Hans\"."
+                __('translations::messages.locale.invalid_code', ['code' => $code])
             );
         }
 

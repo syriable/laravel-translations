@@ -13,19 +13,22 @@ class InstallCommand extends Command
 
     public function handle(TranslationManager $manager): int
     {
-        $this->components->info('Publishing configuration...');
+        $this->components->info(__('translations::messages.install.publishing'));
         $this->callSilently('vendor:publish', ['--tag' => 'translations-config']);
 
-        $this->components->info('Running migrations...');
+        $this->components->info(__('translations::messages.install.migrating'));
         $this->call('migrate');
 
         if ($this->option('import')) {
-            $this->components->info('Importing language files...');
+            $this->components->info(__('translations::messages.install.importing'));
             $summary = $manager->import(['source' => 'cli']);
-            $this->components->info("Imported {$summary->phraseCount} phrases across {$summary->localeCount} locales.");
+            $this->components->info(__('translations::messages.install.imported', [
+                'phrases' => $summary->phraseCount,
+                'locales' => $summary->localeCount,
+            ]));
         }
 
-        $this->components->info('Translations installed.');
+        $this->components->info(__('translations::messages.install.done'));
 
         return self::SUCCESS;
     }
