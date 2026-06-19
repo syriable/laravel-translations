@@ -34,13 +34,21 @@ class StatusCommand extends Command
             ->all();
 
         if ($rows === []) {
-            $this->components->warn('No target locales found. Run translations:import first.');
+            $this->components->warn(__('translations::messages.status.no_locales'));
 
             return self::SUCCESS;
         }
 
-        $this->table(['Locale', 'Total', 'Translated', 'Approved', 'Coverage'], $rows);
-        $this->components->info("Overall coverage: {$insights->overallCoverage()}%");
+        $this->table([
+            __('translations::messages.status.locale_table.locale'),
+            __('translations::messages.status.locale_table.total'),
+            __('translations::messages.status.locale_table.translated'),
+            __('translations::messages.status.locale_table.approved'),
+            __('translations::messages.status.locale_table.coverage'),
+        ], $rows);
+        $this->components->info(__('translations::messages.status.overall', [
+            'percent' => $insights->overallCoverage(),
+        ]));
 
         return self::SUCCESS;
     }
@@ -57,12 +65,17 @@ class StatusCommand extends Command
             ->all();
 
         if ($rows === []) {
-            $this->components->warn('No bundles found. Run translations:import first.');
+            $this->components->warn(__('translations::messages.status.no_bundles'));
 
             return self::SUCCESS;
         }
 
-        $this->table(['Bundle', 'Phrases', 'Translated', 'Coverage'], $rows);
+        $this->table([
+            __('translations::messages.status.bundle_table.bundle'),
+            __('translations::messages.status.bundle_table.phrases'),
+            __('translations::messages.status.bundle_table.translated'),
+            __('translations::messages.status.bundle_table.coverage'),
+        ], $rows);
 
         return self::SUCCESS;
     }

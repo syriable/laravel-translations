@@ -26,13 +26,19 @@ class PruneRevisionsCommand extends Command
             ->whereNotIn('id', $latestIds);
 
         if ($this->option('dry-run')) {
-            $this->components->info("{$query->count()} revisions older than {$days} days would be pruned.");
+            $this->components->info(__('translations::messages.prune.dry_run', [
+                'count' => $query->count(),
+                'days' => $days,
+            ]));
 
             return self::SUCCESS;
         }
 
         $deleted = $query->delete();
-        $this->components->info("Pruned {$deleted} revisions older than {$days} days.");
+        $this->components->info(__('translations::messages.prune.done', [
+            'count' => $deleted,
+            'days' => $days,
+        ]));
 
         return self::SUCCESS;
     }

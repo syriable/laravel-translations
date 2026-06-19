@@ -19,9 +19,15 @@ class ImportCommand extends Command
             'source' => 'cli',
         ]);
 
-        $this->components->info('Import complete.');
+        $this->components->info(__('translations::messages.import.done'));
         $this->table(
-            ['Locales', 'Phrases', 'Created', 'Updated', 'Duration'],
+            [
+                __('translations::messages.import.table.locales'),
+                __('translations::messages.import.table.phrases'),
+                __('translations::messages.import.table.created'),
+                __('translations::messages.import.table.updated'),
+                __('translations::messages.import.table.duration'),
+            ],
             [[$summary->localeCount, $summary->phraseCount, $summary->createdCount, $summary->updatedCount, "{$summary->durationMs}ms"]],
         );
 

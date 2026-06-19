@@ -34,10 +34,16 @@ class TranslationsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerTranslations();
         $this->registerPublishing();
         $this->registerMigrations();
         $this->registerCommands();
         $this->registerListeners();
+    }
+
+    private function registerTranslations(): void
+    {
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'translations');
     }
 
     private function registerPublishing(): void
@@ -53,6 +59,10 @@ class TranslationsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'translations-migrations');
+
+        $this->publishes([
+            __DIR__.'/../lang' => $this->app->langPath('vendor/translations'),
+        ], 'translations-lang');
     }
 
     private function registerMigrations(): void

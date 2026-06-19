@@ -16,14 +16,17 @@ class ScanLooseCommand extends Command
     {
         if ($this->option('queue')) {
             ScanLooseJob::dispatch($this->option('path'));
-            $this->components->info('Hardcoded-string scan dispatched to the queue.');
+            $this->components->info(__('translations::messages.scan_loose.queued'));
 
             return self::SUCCESS;
         }
 
         $result = $scanner->scan($this->option('path'));
 
-        $this->components->info("Scanned {$result['files_scanned']} files, found {$result['detected']} hardcoded strings.");
+        $this->components->info(__('translations::messages.scan_loose.done', [
+            'files' => $result['files_scanned'],
+            'detected' => $result['detected'],
+        ]));
 
         return self::SUCCESS;
     }

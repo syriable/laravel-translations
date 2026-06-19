@@ -17,7 +17,7 @@ class TranslateCommand extends Command
     public function handle(MachineTranslation $machine, TranslationManager $manager): int
     {
         if (! config('translations.ai.enabled', false)) {
-            $this->components->error('AI translation is disabled. Set TRANSLATIONS_AI=true to enable it.');
+            $this->components->error(__('translations::messages.translate.disabled'));
 
             return self::FAILURE;
         }
@@ -26,7 +26,7 @@ class TranslateCommand extends Command
         $locale = Locale::query()->where('code', $code)->first();
 
         if ($locale === null) {
-            $this->components->error("Unknown locale [{$code}].");
+            $this->components->error(__('translations::messages.translate.unknown_locale', ['code' => $code]));
 
             return self::FAILURE;
         }
@@ -35,20 +35,22 @@ class TranslateCommand extends Command
 
         if ($key = $this->option('key')) {
             $message = $manager->translate($key, $code, $options);
-            $this->components->info($message ? "Translated [{$key}]: {$message->value}" : "No source value for [{$key}].");
+            $this->components->info($message
+                ? __('translations::messages.translate.translated_key', ['key' => $key, 'value' => $message->value])
+                : __('translations::messages.translate.no_source', ['key' => $key]));
 
             return self::SUCCESS;
         }
 
         if ($this->option('queue')) {
             TranslateLocaleJob::dispatch($locale->id, $options);
-            $this->components->info("Translation of [{$code}] dispatched to the queue.");
+            $this->components->info(__('translations::messages.translate.queued', ['code' => $code]));
 
             return self::SUCCESS;
         }
 
         $count = $machine->translateOpen($locale, $options);
-        $this->components->info("Translated {$count} messages into [{$code}].");
+        $this->components->info(__('translations::messages.translate.done', ['count' => $count, 'code' => $code]));
 
         return self::SUCCESS;
     }

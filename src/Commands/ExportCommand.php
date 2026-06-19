@@ -19,7 +19,11 @@ class ExportCommand extends Command
             'source' => 'cli',
         ]);
 
-        $this->components->info("Exported {$summary->fileCount} files across {$summary->localeCount} locales in {$summary->durationMs}ms.");
+        $this->components->info(__('translations::messages.export.done', [
+            'files' => $summary->fileCount,
+            'locales' => $summary->localeCount,
+            'duration' => "{$summary->durationMs}ms",
+        ]));
 
         return self::SUCCESS;
     }
