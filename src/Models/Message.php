@@ -4,6 +4,7 @@ namespace Syriable\Translations\Models;
 
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -15,6 +16,10 @@ class Message extends TranslationModel
     protected string $table_ = 'messages';
 
     protected $guarded = [];
+
+    protected $appends = [
+        'source',
+    ];
 
     protected ?string $originalValueBeforeSave = null;
 
@@ -41,6 +46,22 @@ class Message extends TranslationModel
     {
         return $this->hasOne(self::class, 'phrase_id', 'phrase_id')
             ->whereRelation('locale', 'is_source', true);
+    }
+
+    public function targetMessages(): HasMany
+    {
+        return $this->hasMany(self::class, 'phrase_id', 'phrase_id')
+            ->whereRelation('locale', 'is_source', false);
+    }
+
+    public function source(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => match ($this->locale->is_source) {
+                true => $this->phrase->key,
+                false => $this->sourceMessage?->value,
+            },
+        );
     }
 
     public function locale(): BelongsTo
