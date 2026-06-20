@@ -4,9 +4,10 @@ namespace Syriable\Translations\Enums;
 
 use Filament\Support\Colors\Color;
 use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasLabel;
 
-enum Priority: int implements HasColor, HasLabel
+enum Priority: int implements HasColor, HasIcon, HasLabel
 {
     case CRITICAL = 100;
     case HIGH = 75;
@@ -39,11 +40,11 @@ enum Priority: int implements HasColor, HasLabel
     public function getIcon(): string
     {
         return match ($this) {
-            self::CRITICAL => 'heroicon-m-exclamation-triangle',
-            self::HIGH => 'heroicon-m-arrow-up',
-            self::MEDIUM => 'heroicon-m-minus',
-            self::LOW => 'heroicon-m-arrow-down',
-            self::OPTIONAL => 'heroicon-m-ellipsis-horizontal',
+            self::CRITICAL => 'heroicon-o-exclamation-triangle',
+            self::HIGH => 'heroicon-o-arrow-up',
+            self::MEDIUM => 'heroicon-o-minus',
+            self::LOW => 'heroicon-o-arrow-down',
+            self::OPTIONAL => 'heroicon-o-flag',
         };
     }
 }
