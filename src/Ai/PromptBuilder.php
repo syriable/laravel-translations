@@ -2,13 +2,12 @@
 
 namespace Syriable\Translations\Ai;
 
+use Syriable\Translations\Enums\Tone;
 use Syriable\Translations\Support\TranslationRequest;
 
 class PromptBuilder
 {
     private const MAX_LENGTH = 16000;
-
-    private const TONES = ['neutral', 'formal', 'informal', 'friendly', 'technical'];
 
     public function build(TranslationRequest $request): string
     {
@@ -18,7 +17,7 @@ class PromptBuilder
         ];
 
         if ($tone = $this->tone($request->tone)) {
-            $lines[] = "Use a {$tone} tone.";
+            $lines[] = $tone;
         }
 
         if ($request->note) {
@@ -49,9 +48,29 @@ class PromptBuilder
         return mb_substr(implode("\n", $lines), 0, self::MAX_LENGTH);
     }
 
+    /**
+     * Resolve a safe tone instruction. Only recognised tones are allowed so a free-form
+     * value cannot inject arbitrary instructions into the prompt: a known backing value
+     * (e.g. "formal") is wrapped, and a trusted enum instruction (Tone::prompt()) is kept
+     * verbatim; anything else is dropped.
+     */
     private function tone(?string $tone): ?string
     {
-        return in_array($tone, self::TONES, true) ? $tone : null;
+        if (blank($tone)) {
+            return null;
+        }
+
+        if (Tone::tryFrom($tone) instanceof Tone) {
+            return "Use a {$tone} tone.";
+        }
+
+        foreach (Tone::cases() as $case) {
+            if ($case->prompt() === $tone) {
+                return $tone;
+            }
+        }
+
+        return null;
     }
 
     private function fence(string $value): string

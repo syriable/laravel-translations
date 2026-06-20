@@ -5,6 +5,7 @@ namespace Syriable\Translations\Ai;
 use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Enums\RevisionReason;
+use Syriable\Translations\Enums\Tone;
 use Syriable\Translations\Glossary\Glossary;
 use Syriable\Translations\Models\AiUsage;
 use Syriable\Translations\Models\Locale;
@@ -109,7 +110,7 @@ class MachineTranslation
             text: $source,
             sourceLocale: optional(Locale::source())->code ?? config('translations.source_locale'),
             targetLocale: $target->code,
-            tone: $options['tone'] ?? $target->tone,
+            tone: $this->toneInstruction($options['tone'] ?? $target->tone),
             note: $phrase->note,
             usages: $this->usages($phrase),
             siblings: $this->siblings($phrase),
@@ -118,6 +119,23 @@ class MachineTranslation
             provider: AiProviders::sanitize($options['provider'] ?? null),
             model: $options['model'] ?? null,
         );
+    }
+
+    /**
+     * Resolve the tone to a prompt instruction. Accepts a Tone enum, a backing value
+     * (e.g. "formal"), or a free-form instruction string; returns null when absent.
+     */
+    private function toneInstruction(Tone|string|null $tone): ?string
+    {
+        if ($tone instanceof Tone) {
+            return $tone->prompt();
+        }
+
+        if (is_string($tone) && ($resolved = Tone::tryFrom($tone)) !== null) {
+            return $resolved->prompt();
+        }
+
+        return filled($tone) ? $tone : null;
     }
 
     private function usages(Phrase $phrase): array
