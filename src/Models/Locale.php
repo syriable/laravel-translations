@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
 use Syriable\Translations\Enums\Direction;
+use Syriable\Translations\Enums\Tone;
 
 class Locale extends TranslationModel
 {
@@ -19,6 +20,7 @@ class Locale extends TranslationModel
     {
         return [
             'direction' => Direction::class,
+            'tone' => Tone::class,
             'is_source' => 'boolean',
             'enabled' => 'boolean',
         ];

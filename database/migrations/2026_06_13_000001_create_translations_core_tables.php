@@ -5,6 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Syriable\Translations\Enums\Direction;
 use Syriable\Translations\Enums\Priority;
+use Syriable\Translations\Enums\Tone;
 
 return new class extends Migration
 {
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->string('native_name')->nullable();
             $table->string('direction')->default(Direction::Ltr->value);
             $table->boolean('is_source')->default(false);
-            $table->string('tone')->default('neutral');
+            $table->string('tone')->default(Tone::Neutral->value);
             $table->boolean('enabled')->default(true)->index();
             $table->timestamps();
         });
