@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Syriable\Translations\Enums\Direction;
+use Syriable\Translations\Enums\Priority;
 
 return new class extends Migration
 {
@@ -47,7 +48,7 @@ return new class extends Migration
             $table->json('placeholders')->nullable();
             $table->boolean('is_html')->default(false);
             $table->boolean('is_plural')->default(false);
-            $table->string('priority')->nullable();
+            $table->string('priority')->default(Priority::OPTIONAL->value);
             $table->json('meta')->nullable();
             $table->timestamps();
 
