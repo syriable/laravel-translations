@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Syriable\Translations\Enums\Priority;
 
 class Phrase extends TranslationModel
 {
@@ -20,6 +21,7 @@ class Phrase extends TranslationModel
             'is_html' => 'boolean',
             'is_plural' => 'boolean',
             'meta' => 'array',
+            'priority' => Priority::class,
         ];
     }
 
