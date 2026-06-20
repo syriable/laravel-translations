@@ -6,6 +6,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Syriable\Translations\Analytics\BundleCoverage;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string|null $namespace
+ * @property string|null $file_path
+ * @property string $format
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ */
 class Bundle extends TranslationModel
 {
     protected string $table_ = 'bundles';

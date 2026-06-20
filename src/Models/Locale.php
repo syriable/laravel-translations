@@ -10,6 +10,26 @@ use Illuminate\Support\Facades\Cache;
 use Syriable\Translations\Enums\Direction;
 use Syriable\Translations\Enums\Tone;
 
+/**
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ * @property string|null $native_name
+ * @property Direction $direction
+ * @property bool $is_source
+ * @property Tone $tone
+ * @property bool $enabled
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read int|null $messages_count
+ * @property-read int|null $translated_messages_count
+ * @property-read string $flag
+ * @property-read int $translation_progress
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<Locale> enabled()
+ * @method static \Illuminate\Database\Eloquent\Builder<Locale> targets()
+ * @method static \Illuminate\Database\Eloquent\Builder<Locale> withTranslationProgressCounts()
+ */
 class Locale extends TranslationModel
 {
     protected string $table_ = 'locales';

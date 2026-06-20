@@ -8,6 +8,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Syriable\Translations\Enums\Priority;
 
+/**
+ * @property int $id
+ * @property int $bundle_id
+ * @property string $key
+ * @property string|null $note
+ * @property array<array-key, mixed>|null $placeholders
+ * @property bool $is_html
+ * @property bool $is_plural
+ * @property Priority $priority
+ * @property array<array-key, mixed>|null $meta
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read Bundle $bundle
+ */
 class Phrase extends TranslationModel
 {
     protected string $table_ = 'phrases';

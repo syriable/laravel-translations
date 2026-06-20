@@ -11,6 +11,24 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Events\MessageSaved;
 
+/**
+ * @property int $id
+ * @property int $phrase_id
+ * @property int $locale_id
+ * @property string|null $value
+ * @property MessageStatus $status
+ * @property string|null $translated_by
+ * @property string|null $reviewed_by
+ * @property string|null $review_note
+ * @property bool $ai_generated
+ * @property string|null $ai_provider
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read string|null $source
+ * @property-read Locale $locale
+ * @property-read Phrase $phrase
+ * @property-read Message|null $sourceMessage
+ */
 class Message extends TranslationModel
 {
     protected string $table_ = 'messages';
