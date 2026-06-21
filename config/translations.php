@@ -1,5 +1,6 @@
 <?php
 
+use Syriable\Translations\Enums\AiProvider;
 use Syriable\Translations\Quality\Checks\CasingCheck;
 use Syriable\Translations\Quality\Checks\GlossaryCheck;
 use Syriable\Translations\Quality\Checks\HtmlTagCheck;
@@ -116,7 +117,7 @@ return [
         'enabled' => env('TRANSLATIONS_AI', false),
         'provider' => env('TRANSLATIONS_AI_PROVIDER', 'openai'),
         'model' => env('TRANSLATIONS_AI_MODEL', 'gpt-4o-mini'),
-        'allowed_providers' => ['openai', 'anthropic', 'gemini', 'groq', 'mistral', 'xai', 'deepseek', 'openrouter', 'ollama', 'cohere'],
+        'allowed_providers' => array_column(AiProvider::cases(), 'value'),
         'variants' => 3,
         'batch_size' => 20,
         'cost_rates' => [
