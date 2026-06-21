@@ -75,7 +75,7 @@ php artisan vendor:publish --tag=translations-migrations   # optional, only to c
 php artisan migrate
 ```
 
-**Requirements:** PHP 8.2+, Laravel 11, 12 or 13.
+**Requirements:** PHP 8.3+, Laravel 12 or 13.
 
 **AI features are optional.** They're only needed when you call `Translations::translate()` and friends,
 and they rely on the [`laravel/ai`](https://github.com/laravel/ai) SDK:
