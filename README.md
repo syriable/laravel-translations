@@ -464,7 +464,7 @@ return [
         'enabled'           => env('TRANSLATIONS_AI', false),
         'provider'          => env('TRANSLATIONS_AI_PROVIDER', 'openai'),
         'model'             => env('TRANSLATIONS_AI_MODEL', 'gpt-4o-mini'),
-        'allowed_providers' => ['openai', 'anthropic', 'gemini', 'groq', 'mistral', 'xai', 'deepseek', 'openrouter', 'ollama', 'cohere'],
+        'allowed_providers' => array_column(AiProvider::cases(), 'value'), // Syriable\Translations\Enums\AiProvider
         'variants'          => 3,
         'batch_size'        => 20,
         'cost_rates'        => [ /* model => ['input' => ..., 'output' => ...] in USD per 1M chars */ ],
