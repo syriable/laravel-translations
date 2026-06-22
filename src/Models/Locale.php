@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Syriable\Translations\Enums\Direction;
 use Syriable\Translations\Enums\Tone;
@@ -19,8 +20,8 @@ use Syriable\Translations\Enums\Tone;
  * @property bool $is_source
  * @property Tone $tone
  * @property bool $enabled
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read int|null $messages_count
  * @property-read int|null $translated_messages_count
  * @property-read string $flag

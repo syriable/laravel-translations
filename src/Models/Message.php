@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Events\MessageSaved;
 
@@ -22,8 +23,8 @@ use Syriable\Translations\Events\MessageSaved;
  * @property string|null $review_note
  * @property bool $ai_generated
  * @property string|null $ai_provider
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read string|null $source
  * @property-read Locale $locale
  * @property-read Phrase $phrase

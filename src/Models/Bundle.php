@@ -4,6 +4,7 @@ namespace Syriable\Translations\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Syriable\Translations\Analytics\BundleCoverage;
 
 /**
@@ -12,8 +13,8 @@ use Syriable\Translations\Analytics\BundleCoverage;
  * @property string|null $namespace
  * @property string|null $file_path
  * @property string $format
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Bundle extends TranslationModel
 {
