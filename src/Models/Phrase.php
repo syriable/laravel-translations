@@ -64,6 +64,19 @@ class Phrase extends TranslationModel
         return "{$this->bundle->name}.{$this->key}";
     }
 
+    /**
+     * Split a key into its prefix segments, treating `.`, `_` and `-` as
+     * boundaries. `accepted_if` → `['accepted', 'if']`.
+     *
+     * @return list<string>
+     */
+    public static function segments(string $key): array
+    {
+        $parts = preg_split('/[._-]+/', $key, flags: PREG_SPLIT_NO_EMPTY);
+
+        return $parts === false || $parts === [] ? [$key] : $parts;
+    }
+
     public function scopeMissingIn(Builder $query, int $localeId): Builder
     {
         return $query->whereDoesntHave('messages', function (Builder $sub) use ($localeId): void {

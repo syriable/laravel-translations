@@ -22,6 +22,7 @@ use Syriable\Translations\TranslationManager;
  * @method static Message set(string $key, string $value, string|null $locale = null, array $options = [])
  * @method static void forget(string $key, string|null $locale = null)
  * @method static array all(string|null $locale = null)
+ * @method static Collection similar(string $key, array $options = [])
  * @method static Collection locales()
  * @method static Locale addLocale(string $code, array $attributes = [])
  * @method static ImportSummary import(array $options = [])
