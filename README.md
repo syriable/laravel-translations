@@ -165,6 +165,30 @@ Translations::all('es');                       // ['cart.checkout' => 'Pagar', .
 
 `set()` is wrapped in a database transaction and returns the saved `Message`.
 
+### Finding similar keys
+
+Surface phrases in the **same bundle** that share a leading key segment — handy for spotting related
+rules while you work (e.g. `validation.accepted` and its `accepted_if` / `accepted_unless` cousins).
+Segments are split on `.`, `_` and `-`.
+
+```php
+Translations::similar('validation.accepted');
+// Collection<Phrase>: accepted_if, accepted_unless, ...
+
+Translations::similar('validation.accepted')->map->dottedKey();
+// ['validation.accepted_if', 'validation.accepted_unless']
+
+// Options
+Translations::similar('validation.accepted', [
+    'segments'     => 1,      // how many leading segments must match (default 1)
+    'limit'        => 5,      // cap the number of results
+    'include_self' => false,  // keep the given phrase in the result (default false)
+]);
+```
+
+It returns a `Collection<Phrase>` from the same bundle only, ordered by key, excluding the given
+phrase by default. An unknown key yields an empty collection.
+
 ### Locales
 
 ```php
@@ -378,6 +402,7 @@ Every method on the `Translations` facade (backed by `TranslationManager`):
 | `set(string $key, string $value, ?string $locale = null, array $options = [])` | `Message` | Write a value (transactional); creates the phrase on demand. Options: `by`, `reason`, `status`, `meta`. |
 | `forget(string $key, ?string $locale = null)` | `void` | Clear one locale's value, or delete the phrase. |
 | `all(?string $locale = null)` | `array` | All values for a locale, keyed by dotted key. |
+| `similar(string $key, array $options = [])` | `Collection` | Phrases in the same bundle sharing a leading key segment. Options: `segments`, `limit`, `include_self`. |
 | `locales()` | `Collection` | All locales. |
 | `addLocale(string $code, array $attributes = [])` | `Locale` | Create a locale and seed its messages. |
 | `import(array $options = [])` | `ImportSummary` | Disk → DB. Options: `fresh`, `overwrite`, `lang_path`, `source`, `triggered_by`. |

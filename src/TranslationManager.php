@@ -112,6 +112,45 @@ class TranslationManager
             ->all();
     }
 
+    /**
+     * Phrases in the same bundle that share a leading key segment with the
+     * given key — e.g. `validation.accepted` surfaces `accepted_if`,
+     * `accepted_unless`, … Segments are split on `.`, `_` and `-`.
+     *
+     * Options:
+     *   - `segments`     (int)  how many leading segments must match (default 1)
+     *   - `limit`        (int)  cap the number of results
+     *   - `include_self` (bool) keep the given phrase in the result (default false)
+     *
+     * @return Collection<int, Phrase>
+     */
+    public function similar(string $key, array $options = []): Collection
+    {
+        $phrase = $this->resolvePhrase($key);
+
+        if ($phrase === null) {
+            return new Collection;
+        }
+
+        $target = Phrase::segments($phrase->key);
+        $depth = min(max(1, (int) ($options['segments'] ?? 1)), count($target));
+        $prefix = array_slice($target, 0, $depth);
+
+        $matches = Phrase::query()
+            ->where('bundle_id', $phrase->bundle_id)
+            ->when(empty($options['include_self']), fn ($query) => $query->whereKeyNot($phrase->getKey()))
+            ->orderBy('key')
+            ->get()
+            ->filter(fn (Phrase $candidate): bool => array_slice(Phrase::segments($candidate->key), 0, $depth) === $prefix)
+            ->values();
+
+        if (isset($options['limit'])) {
+            $matches = $matches->take((int) $options['limit'])->values();
+        }
+
+        return $matches;
+    }
+
     public function locales(): Collection
     {
         return Locale::query()->orderBy('code')->get();

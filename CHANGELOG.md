@@ -14,6 +14,9 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
 - **Core model and API.** A normalized `Locale → Bundle → Phrase → Message` schema (prefixed,
   optionally on a dedicated connection) behind a single `Translations` facade: `get`, `set`, `has`,
   `forget`, `all`, plus `locales()` / `addLocale()`.
+- **Similar-key lookup.** `Translations::similar($key)` surfaces phrases in the same bundle that
+  share a leading key segment (e.g. `validation.accepted` → `accepted_if`, `accepted_unless`), with
+  `segments`, `limit` and `include_self` options.
 - **Language-file sync.** Import PHP (including nested directories), JSON and vendor namespace files;
   export back to the same paths, preserving nesting, key sorting, plurals and Unicode. Nested files
   use their slash path as the bundle name (Laravel group convention).
