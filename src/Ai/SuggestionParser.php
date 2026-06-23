@@ -102,6 +102,12 @@ class SuggestionParser
 
         $decoded = json_decode($trimmed, true);
 
+        // Models frequently emit invalid JSON here — typically unescaped double
+        // quotes inside note/value strings (e.g. 使用"凭据"). Repair and retry.
+        if (! is_array($decoded)) {
+            $decoded = json_decode($this->repairJson($trimmed), true);
+        }
+
         if (isset($decoded['suggestions']) && is_array($decoded['suggestions'])) {
             $decoded = $decoded['suggestions'];
         }
@@ -116,6 +122,69 @@ class SuggestionParser
         ));
 
         return $items === [] ? null : $items;
+    }
+
+    /**
+     * Best-effort repair of JSON that contains unescaped double quotes inside
+     * string values. A quote is treated as structural (it closes the string)
+     * only when the next non-space character is a JSON delimiter (`:,}]`) or the
+     * end of input; any other quote is escaped so the string keeps its content.
+     * Quote bytes are ASCII, so iterating bytes is safe for UTF-8 input.
+     */
+    private function repairJson(string $json): string
+    {
+        $result = '';
+        $length = strlen($json);
+        $inString = false;
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $json[$i];
+
+            if (! $inString) {
+                $result .= $char;
+
+                if ($char === '"') {
+                    $inString = true;
+                }
+
+                continue;
+            }
+
+            if ($char === '\\') {
+                // Preserve an existing escape sequence verbatim.
+                $result .= $char;
+
+                if ($i + 1 < $length) {
+                    $result .= $json[++$i];
+                }
+
+                continue;
+            }
+
+            if ($char === '"') {
+                $next = $i + 1;
+
+                while ($next < $length && ctype_space($json[$next])) {
+                    $next++;
+                }
+
+                $following = $next < $length ? $json[$next] : '';
+
+                if ($following === '' || in_array($following, [':', ',', '}', ']'], true)) {
+                    $inString = false;
+                    $result .= $char;
+                } else {
+                    // A stray quote inside the string: escape it.
+                    $result .= '\\"';
+                }
+
+                continue;
+            }
+
+            $result .= $char;
+        }
+
+        return $result;
     }
 
     /**
