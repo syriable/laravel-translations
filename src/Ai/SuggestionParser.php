@@ -9,11 +9,20 @@ class SuggestionParser
      * unwrap any embedded JSON payloads, coerce the fields, drop empties and
      * guarantee exactly one recommended variant.
      *
-     * @param  array<int, mixed>  $suggestions
      * @return array<int, array{value: string, confidence: float|null, recommended: bool, note: string|null}>
      */
-    public function parse(array $suggestions): array
+    public function parse(mixed $suggestions): array
     {
+        // Defend against models returning the whole payload as a string or a
+        // single object rather than the expected list of suggestion objects.
+        if (is_string($suggestions)) {
+            $suggestions = [$suggestions];
+        } elseif (is_array($suggestions) && array_key_exists('value', $suggestions)) {
+            $suggestions = [$suggestions];
+        } elseif (! is_array($suggestions)) {
+            return [];
+        }
+
         $variants = collect($this->extractSuggestions($suggestions))
             ->map(fn (array $suggestion) => [
                 'value' => trim((string) ($suggestion['value'] ?? '')),
@@ -44,6 +53,13 @@ class SuggestionParser
         $flattened = [];
 
         foreach ($suggestions as $suggestion) {
+            // Some models return suggestions as bare strings instead of objects.
+            // Treat the string as the value, after first checking it isn't an
+            // embedded JSON payload of suggestions.
+            if (is_string($suggestion)) {
+                $suggestion = ['value' => $suggestion];
+            }
+
             if (! is_array($suggestion)) {
                 continue;
             }
