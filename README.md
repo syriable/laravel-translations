@@ -262,7 +262,8 @@ with an estimated cost from `ai.cost_rates`.
 Each suggestion in the returned `TranslationResult` carries a `value` (the translation), a `confidence`
 score, a `recommended` flag (exactly one variant is always recommended), and an optional `note` — a
 concise, human-readable explanation of why that wording was chosen (terminology, common usage, natural
-phrasing, framework conventions), written in the target language. Read the recommended variant directly:
+phrasing, framework conventions), written in the **source language** so the translator reading it
+understands the reasoning. Read the recommended variant directly:
 
 ```php
 $result = $ai->suggest($phrase, $germanLocale, ['variants' => 3]);

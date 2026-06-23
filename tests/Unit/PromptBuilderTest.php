@@ -38,7 +38,7 @@ it('strips delimiter characters from untrusted values so they cannot break the f
     expect($prompt)->toContain('«Hello  world»');
 });
 
-it('asks for an explanatory note in the target language', function (): void {
+it('asks for an explanatory note in the translator source language', function (): void {
     $prompt = (new PromptBuilder)->build(new TranslationRequest(
         text: 'Hello world',
         sourceLocale: 'en',
@@ -47,7 +47,8 @@ it('asks for an explanatory note in the target language', function (): void {
 
     expect($prompt)
         ->toContain("'note'")
-        ->toContain('Write the note in ar')
+        ->toContain('Write the note in en')
+        ->toContain('not in the target language')
         ->toContain('Do not repeat the translated text')
         ->toContain('do not mention confidence');
 });

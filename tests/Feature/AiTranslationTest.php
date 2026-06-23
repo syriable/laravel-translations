@@ -47,7 +47,7 @@ it('exposes an explanatory note on the suggestion result', function (): void {
 
     $result = Translations::ai()->suggest($phrase, $es);
 
-    expect($result->note())->toBe('Fake explanation for es.');
+    expect($result->note())->toBe('Fake explanation in en.');
     expect($result->recommended()['recommended'])->toBeTrue();
 });
 

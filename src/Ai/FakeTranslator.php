@@ -31,7 +31,7 @@ class FakeTranslator implements Translator
                 'value' => $i === 0 ? $value : "{$value} ({$i})",
                 'confidence' => 0.9 - ($i * 0.1),
                 'recommended' => $i === 0,
-                'note' => $i === 0 ? "Fake explanation for {$request->targetLocale}." : null,
+                'note' => $i === 0 ? "Fake explanation in {$request->sourceLocale}." : null,
             ];
         }
 
