@@ -56,6 +56,12 @@ it('asks the model to recommend exactly one suggestion', function (): void {
     $single = (new PromptBuilder)->build(new TranslationRequest('Hi', 'en', 'es'));
     $multiple = (new PromptBuilder)->build(new TranslationRequest('Hi', 'en', 'es', variants: 3));
 
-    expect($single)->toContain('Mark the suggestion as recommended.');
+    expect($single)->toContain('Provide a single translation suggestion and mark it as recommended.');
     expect($multiple)->toContain('mark exactly one as recommended');
+});
+
+it('forbids embedding json or multiple translations in a value', function (): void {
+    $prompt = (new PromptBuilder)->build(new TranslationRequest('Hi', 'en', 'es'));
+
+    expect($prompt)->toContain('value must contain only the translated text');
 });
