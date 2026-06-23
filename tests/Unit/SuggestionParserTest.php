@@ -60,6 +60,49 @@ it('leaves a plain translation untouched', function (): void {
     expect($variants[0]['value'])->toBe('Hello [world]');
 });
 
+it('accepts suggestions returned as bare strings instead of objects', function (): void {
+    // The model returned the suggestions as a plain array of strings.
+    $variants = (new SuggestionParser)->parse([
+        '这些凭据与我们的记录不符。',
+        '这些凭证与我们的记录不匹配。',
+    ]);
+
+    expect($variants)->toHaveCount(2);
+    expect($variants[0]['value'])->toBe('这些凭据与我们的记录不符。');
+    expect($variants[0]['confidence'])->toBeNull();
+    expect($variants[0]['note'])->toBeNull();
+    expect($variants[0]['recommended'])->toBeTrue();
+});
+
+it('unwraps a bare string that is itself an encoded suggestion list', function (): void {
+    $blob = json_encode([
+        ['value' => '你好', 'confidence' => 0.9, 'note' => '常用问候语'],
+        ['value' => '您好', 'confidence' => 0.8, 'note' => '更正式'],
+    ], JSON_UNESCAPED_UNICODE);
+
+    $variants = (new SuggestionParser)->parse([$blob]);
+
+    expect($variants)->toHaveCount(2);
+    expect($variants[0]['value'])->toBe('你好');
+    expect($variants[0]['note'])->toBe('常用问候语');
+});
+
+it('handles a single suggestion object passed directly', function (): void {
+    $variants = (new SuggestionParser)->parse([
+        'value' => 'Hola', 'confidence' => 0.9, 'note' => 'saludo',
+    ]);
+
+    expect($variants)->toHaveCount(1);
+    expect($variants[0]['value'])->toBe('Hola');
+    expect($variants[0]['recommended'])->toBeTrue();
+});
+
+it('returns nothing for unusable payloads', function (): void {
+    expect((new SuggestionParser)->parse(null))->toBe([]);
+    expect((new SuggestionParser)->parse([]))->toBe([]);
+    expect((new SuggestionParser)->parse(42))->toBe([]);
+});
+
 it('drops empty values and normalizes missing fields', function (): void {
     $variants = (new SuggestionParser)->parse([
         ['value' => '  '],
