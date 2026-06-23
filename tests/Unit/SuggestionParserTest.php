@@ -34,6 +34,40 @@ it('unwraps a suggestion list that the model encoded as JSON inside a single val
     expect($variants[1]['recommended'])->toBeFalse();
 });
 
+it('repairs and unwraps a JSON blob with unescaped quotes inside notes', function (): void {
+    // Real-world Anthropic output: the whole list is dumped as a string into
+    // value[0], and the notes contain unescaped double quotes, so json_decode
+    // alone fails.
+    $blob = <<<'JSON'
+    [
+      {
+        "value": "这些凭据与我们的记录不符。",
+        "confidence": 0.95,
+        "recommended": true,
+        "note": "使用"凭据"作为credentials的标准译法,搭配"与...不符"表达不匹配的含义。"
+      },
+      {
+        "value": "这些凭证与我们的记录不匹配。",
+        "confidence": 0.88,
+        "recommended": false,
+        "note": "采用"凭证"这一同样常见的术语翻译,使用"不匹配"直接对应match。"
+      }
+    ]
+    JSON;
+
+    $variants = (new SuggestionParser)->parse([
+        ['value' => $blob, 'confidence' => null, 'recommended' => true, 'note' => null],
+    ]);
+
+    expect($variants)->toHaveCount(2);
+    expect($variants[0]['value'])->toBe('这些凭据与我们的记录不符。');
+    expect($variants[0]['confidence'])->toBe(0.95);
+    expect($variants[0]['recommended'])->toBeTrue();
+    expect($variants[0]['note'])->toContain('凭据');
+    expect($variants[1]['value'])->toBe('这些凭证与我们的记录不匹配。');
+    expect($variants[1]['recommended'])->toBeFalse();
+});
+
 it('unwraps a fenced and suggestions-wrapped JSON payload', function (): void {
     $blob = "```json\n".json_encode([
         'suggestions' => [
