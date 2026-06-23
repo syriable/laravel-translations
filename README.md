@@ -259,6 +259,19 @@ Prompts are context-aware (glossary terms, developer notes, where the key is use
 **fence untrusted context** so it can't act as instructions. Every call is logged to `tx_ai_usages`
 with an estimated cost from `ai.cost_rates`.
 
+Each suggestion in the returned `TranslationResult` carries a `value` (the translation), a `confidence`
+score, a `recommended` flag (exactly one variant is always recommended), and an optional `note` — a
+concise, human-readable explanation of why that wording was chosen (terminology, common usage, natural
+phrasing, framework conventions), written in the target language. Read the recommended variant directly:
+
+```php
+$result = $ai->suggest($phrase, $germanLocale, ['variants' => 3]);
+
+$result->best();        // the recommended translation string
+$result->note();        // why it was chosen, e.g. "Standard term used in German UIs."
+$result->recommended(); // the full recommended variant array
+```
+
 **Swapping the engine** (e.g. in tests) is a one-liner — `Translator` has a single method:
 
 ```php

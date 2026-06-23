@@ -43,7 +43,18 @@ class PromptBuilder
         }
 
         $lines[] = 'Rules: preserve placeholders like :name and {count}; preserve HTML tags; keep URLs and emails unchanged; match the source capitalization and surrounding whitespace.';
-        $lines[] = "Translate the following text, returning only its translation:\n\n«".$this->fence($request->text).'»';
+
+        $count = max(1, $request->variants);
+
+        if ($count > 1) {
+            $lines[] = "Provide {$count} distinct translation suggestions and mark exactly one as recommended.";
+        } else {
+            $lines[] = 'Mark the suggestion as recommended.';
+        }
+
+        $lines[] = "For each suggestion add a 'note': a concise explanation (one or two sentences) of why the wording was chosen — terminology, common usage, standard or technically accurate phrasing, context suitability, or framework conventions when relevant.";
+        $lines[] = "Write the note in {$request->targetLocale} (the same language as the translation). Do not repeat the translated text in the note and do not mention confidence scores.";
+        $lines[] = "Translate the following text:\n\n«".$this->fence($request->text).'»';
 
         return mb_substr(implode("\n", $lines), 0, self::MAX_LENGTH);
     }
