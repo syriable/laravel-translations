@@ -2,11 +2,11 @@
 
 namespace Syriable\Translations\Enums;
 
-use Filament\Support\Contracts\HasLabel;
-use Filament\Support\Contracts\HasIcon;
 use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasIcon;
+use Filament\Support\Contracts\HasLabel;
 
-enum AiProvider: string implements HasLabel, HasIcon, HasColor
+enum AiProvider: string implements HasColor, HasIcon, HasLabel
 {
     case OpenAI = 'openai';
     case Anthropic = 'anthropic';
@@ -41,6 +41,7 @@ enum AiProvider: string implements HasLabel, HasIcon, HasColor
             default => 'gray',
         };
     }
+
     public function getIcon(): string
     {
         return match ($this) {
