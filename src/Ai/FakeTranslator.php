@@ -30,7 +30,8 @@ class FakeTranslator implements Translator
             $variants[] = [
                 'value' => $i === 0 ? $value : "{$value} ({$i})",
                 'confidence' => 0.9 - ($i * 0.1),
-                'note' => null,
+                'recommended' => $i === 0,
+                'note' => $i === 0 ? "Fake explanation for {$request->targetLocale}." : null,
             ];
         }
 

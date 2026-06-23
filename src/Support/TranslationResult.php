@@ -14,6 +14,30 @@ class TranslationResult
 
     public function best(): ?string
     {
-        return $this->variants[0]['value'] ?? null;
+        return $this->recommended()['value'] ?? $this->variants[0]['value'] ?? null;
+    }
+
+    /**
+     * The explanatory note for the recommended (or first) variant, when available.
+     */
+    public function note(): ?string
+    {
+        return $this->recommended()['note'] ?? $this->variants[0]['note'] ?? null;
+    }
+
+    /**
+     * The recommended variant, falling back to the first one.
+     *
+     * @return array{value: string, confidence: float|null, recommended?: bool, note: string|null}|null
+     */
+    public function recommended(): ?array
+    {
+        foreach ($this->variants as $variant) {
+            if ($variant['recommended'] ?? false) {
+                return $variant;
+            }
+        }
+
+        return $this->variants[0] ?? null;
     }
 }

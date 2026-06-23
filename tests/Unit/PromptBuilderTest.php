@@ -37,3 +37,25 @@ it('strips delimiter characters from untrusted values so they cannot break the f
 
     expect($prompt)->toContain('«Hello  world»');
 });
+
+it('asks for an explanatory note in the target language', function (): void {
+    $prompt = (new PromptBuilder)->build(new TranslationRequest(
+        text: 'Hello world',
+        sourceLocale: 'en',
+        targetLocale: 'ar',
+    ));
+
+    expect($prompt)
+        ->toContain("'note'")
+        ->toContain('Write the note in ar')
+        ->toContain('Do not repeat the translated text')
+        ->toContain('do not mention confidence');
+});
+
+it('asks the model to recommend exactly one suggestion', function (): void {
+    $single = (new PromptBuilder)->build(new TranslationRequest('Hi', 'en', 'es'));
+    $multiple = (new PromptBuilder)->build(new TranslationRequest('Hi', 'en', 'es', variants: 3));
+
+    expect($single)->toContain('Mark the suggestion as recommended.');
+    expect($multiple)->toContain('mark exactly one as recommended');
+});

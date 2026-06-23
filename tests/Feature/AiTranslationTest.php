@@ -6,6 +6,7 @@ use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\AiUsage;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Message;
+use Syriable\Translations\Models\Phrase;
 
 beforeEach(function (): void {
     $this->fake = new FakeTranslator(fn ($request) => 'TR:'.$request->text);
@@ -36,6 +37,18 @@ it('forwards glossary terms and context into the request', function (): void {
     Translations::translate('messages.cart', 'es');
 
     expect($this->fake->requests[0]->glossary)->toBe(['cart' => 'carrito']);
+});
+
+it('exposes an explanatory note on the suggestion result', function (): void {
+    Translations::set('messages.greeting', 'Hello there', 'en');
+
+    $phrase = Phrase::query()->where('key', 'greeting')->firstOrFail();
+    $es = Locale::query()->where('code', 'es')->first();
+
+    $result = Translations::ai()->suggest($phrase, $es);
+
+    expect($result->note())->toBe('Fake explanation for es.');
+    expect($result->recommended()['recommended'])->toBeTrue();
 });
 
 it('translates every open message for a locale', function (): void {
