@@ -25,25 +25,46 @@ class WhitespaceCheck extends Check
             return null;
         }
 
-        $sourceLeading = $this->leading($source->value);
-        $sourceTrailing = $this->trailing($source->value);
+        $problems = [];
 
-        if ($this->leading($message->value) === $sourceLeading && $this->trailing($message->value) === $sourceTrailing) {
+        $edgesMatch = $this->leading($message->value) === $this->leading($source->value)
+            && $this->trailing($message->value) === $this->trailing($source->value);
+
+        if (! $edgesMatch) {
+            $problems[] = 'leading/trailing whitespace';
+        }
+
+        // Repeated spaces inside the translation that the source does not have.
+        if ($this->hasRepeatedSpaces($message->value) && ! $this->hasRepeatedSpaces($source->value)) {
+            $problems[] = 'double spaces';
+        }
+
+        if ($problems === []) {
             return null;
         }
 
         return new Issue(
             $this->key(),
             Severity::Warning,
-            'Leading or trailing whitespace does not match the source string.',
-            'Trim the translation to match the source whitespace.',
+            'Whitespace issue(s): '.implode(', ', $problems).'.',
+            'Match the source whitespace and collapse repeated spaces.',
             true,
+            ['problems' => $problems],
         );
     }
 
     public function fix(Message $message, Message $source): ?string
     {
-        return $this->leading($source->value).trim($message->value).$this->trailing($source->value);
+        $inner = trim($message->value);
+
+        // Collapse runs of horizontal whitespace to a single space, unless the
+        // source itself contains repeated spaces (then keep the translation as
+        // the author wrote it).
+        if (! $this->hasRepeatedSpaces($source->value)) {
+            $inner = (string) preg_replace('/\h{2,}/u', ' ', $inner);
+        }
+
+        return $this->leading($source->value).$inner.$this->trailing($source->value);
     }
 
     private function leading(string $value): string
@@ -58,5 +79,14 @@ class WhitespaceCheck extends Check
         preg_match('/\s*$/', $value, $matches);
 
         return $matches[0];
+    }
+
+    /**
+     * Whether the value contains two or more consecutive horizontal whitespace
+     * characters between non-space characters (i.e. internal "double spaces").
+     */
+    private function hasRepeatedSpaces(string $value): bool
+    {
+        return (bool) preg_match('/\S\h{2,}\S/u', $value);
     }
 }
