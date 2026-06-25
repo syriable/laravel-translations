@@ -45,6 +45,25 @@ it('auto-fixes whitespace and casing issues', function (): void {
     expect(Translations::get('messages.label', 'es'))->toBe('Save changes');
 });
 
+it('flags and fixes internal double spaces', function (): void {
+    config()->set('translations.quality.run_on_save', false);
+
+    Translations::set('messages.accept', 'The :attribute field must be accepted.', 'en');
+    $message = Translations::set('messages.accept', 'يجب قبول      حقل :attribute.', 'es');
+
+    $inspector = app(Inspector::class);
+    $inspector->inspectAndStore($message->fresh(['locale']));
+
+    $issue = QualityIssue::query()->where('check', 'whitespace')->first();
+
+    expect($issue)->not->toBeNull();
+    expect($issue->detail)->toContain('double spaces');
+
+    $inspector->fix($issue);
+
+    expect(Translations::get('messages.accept', 'es'))->toBe('يجب قبول حقل :attribute.');
+});
+
 it('does not flag the source locale against itself', function (): void {
     Translations::set('messages.welcome', 'Hello :name', 'en');
 
