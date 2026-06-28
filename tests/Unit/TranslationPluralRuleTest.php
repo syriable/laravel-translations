@@ -58,3 +58,24 @@ it('skips validation when there is no source message', function (): void {
 
     expect(pluralFailuresFor($phrase, 'one|two|three'))->toBe([]);
 });
+
+it('fails when explicit selectors are dropped even if the variant count matches', function (): void {
+    $phrase = pluralPhrase(true, '{0} There are none|[1,19] There are some|[20,*] <span>There are many</span>');
+
+    expect(pluralFailuresFor($phrase, 'vDVD|SV SDEVAE | AFAWF'))
+        ->toBe(['The plural translation must keep the same selectors and numbers as the source ({0} [1,19] [20,*]), got ∅ ∅ ∅.']);
+});
+
+it('passes when explicit selectors are preserved exactly', function (): void {
+    $phrase = pluralPhrase(true, '{0} There are none|[1,19] There are some|[20,*] <span>There are many</span>');
+
+    expect(pluralFailuresFor($phrase, "{0} Il n'y en a aucun|[1,19] Il y en a quelques-uns|[20,*] <span>Il y en a beaucoup</span>"))
+        ->toBe([]);
+});
+
+it('fails when an explicit selector number is changed', function (): void {
+    $phrase = pluralPhrase(true, '{0} none|[1,19] some|[20,*] many');
+
+    expect(pluralFailuresFor($phrase, '{0} aucun|[1,20] quelques|[20,*] beaucoup'))
+        ->toBe(['The plural translation must keep the same selectors and numbers as the source ({0} [1,19] [20,*]), got {0} [1,20] [20,*].']);
+});

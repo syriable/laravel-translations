@@ -8,8 +8,10 @@ use Syriable\Translations\Models\Phrase;
 use Syriable\Translations\Support\PlaceholderScanner;
 
 /**
- * Ensures a submitted plural translation has the same number of pipe-separated
- * variants (e.g. `one apple|many apples`) as the phrase's source message.
+ * Ensures a submitted plural translation matches its source. When the source
+ * uses explicit selectors (e.g. `{0} none|[1,19] some|[20,*] many`) the
+ * translation must preserve every selector and its numbers exactly; otherwise
+ * it only has to keep the same number of pipe-separated variants.
  */
 class TranslationPluralRule implements ValidationRule
 {
@@ -28,8 +30,30 @@ class TranslationPluralRule implements ValidationRule
         }
 
         $scanner = new PlaceholderScanner;
+        $value = (string) $value;
+
+        $sourceQualifiers = $scanner->pluralQualifiers($source);
+
+        // When the source uses explicit selectors ({0}, [1,19], [20,*]) the
+        // translation must preserve them exactly: same selectors, numbers and
+        // order. This also guarantees an identical variant count.
+        if (array_filter($sourceQualifiers) !== []) {
+            $valueQualifiers = $scanner->pluralQualifiers($value);
+
+            if ($valueQualifiers !== $sourceQualifiers) {
+                $fail(__('translations::messages.validate.plural_qualifiers', [
+                    'expected' => $this->renderQualifiers($sourceQualifiers),
+                    'actual' => $this->renderQualifiers($valueQualifiers),
+                ]));
+            }
+
+            return;
+        }
+
+        // Otherwise the source is a simple `one|many` plural, so only the
+        // number of pipe-separated variants has to match.
         $expected = $scanner->pluralSegments($source);
-        $actual = $scanner->pluralSegments((string) $value);
+        $actual = $scanner->pluralSegments($value);
 
         if ($actual !== $expected) {
             $fail(__('translations::messages.validate.plural_segments', [
@@ -37,5 +61,20 @@ class TranslationPluralRule implements ValidationRule
                 'actual' => $actual,
             ]));
         }
+    }
+
+    /**
+     * @param  list<string>  $qualifiers
+     */
+    private function renderQualifiers(array $qualifiers): string
+    {
+        if ($qualifiers === []) {
+            return '∅';
+        }
+
+        return implode(' ', array_map(
+            fn (string $qualifier): string => $qualifier === '' ? '∅' : $qualifier,
+            $qualifiers,
+        ));
     }
 }
