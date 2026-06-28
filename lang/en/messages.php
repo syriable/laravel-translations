@@ -74,6 +74,7 @@ return [
         'fixed' => 'Auto-fixed :count issues.',
         'missing_placeholders' => 'The translation is missing required placeholders: :placeholders.',
         'plural_segments' => 'The plural translation must have :expected variants separated by pipes (|), got :actual.',
+        'plural_qualifiers' => 'The plural translation must keep the same selectors and numbers as the source (:expected), got :actual.',
         'table' => [
             'checked' => 'Checked',
             'errors' => 'Errors',

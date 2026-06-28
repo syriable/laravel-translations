@@ -24,6 +24,21 @@ it('detects html, plurals, urls and emails', function (): void {
     expect($this->scanner->emails('Mail us at hi@example.com today'))->toBe(['hi@example.com']);
 });
 
+it('extracts explicit plural selectors per segment', function (): void {
+    expect($this->scanner->pluralQualifiers('{0} none|[1,19] some|[20,*] <span>many</span>'))
+        ->toBe(['{0}', '[1,19]', '[20,*]']);
+});
+
+it('normalizes whitespace inside plural selectors', function (): void {
+    expect($this->scanner->pluralQualifiers('{ 0 } none|[1, 19] some'))
+        ->toBe(['{0}', '[1,19]']);
+});
+
+it('returns empty selectors for simple plurals', function (): void {
+    expect($this->scanner->pluralQualifiers('one apple|many apples'))
+        ->toBe(['', '']);
+});
+
 it('lists html tag names', function (): void {
     expect($this->scanner->htmlTags('<strong>Bold</strong> and <em>x</em>'))
         ->toEqualCanonicalizing(['strong', 'strong', 'em', 'em']);

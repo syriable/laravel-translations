@@ -74,6 +74,7 @@ return [
         'fixed' => ':count مسائل خودکار طور پر حل کیے گئے۔',
         'missing_placeholders' => 'ترجمے میں مطلوبہ پلیس ہولڈرز غائب ہیں: :placeholders۔',
         'plural_segments' => 'جمع کے ترجمے میں پائپ (|) سے الگ کیے گئے :expected متغیرات ہونے چاہئیں، :actual ملے۔',
+        'plural_qualifiers' => 'جمع کے ترجمے میں ماخذ جیسے ہی سلیکٹرز اور نمبرز برقرار رہنے چاہئیں (:expected)، :actual ملے۔',
         'table' => [
             'checked' => 'جانچے گئے',
             'errors' => 'خرابیاں',

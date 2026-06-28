@@ -39,6 +39,32 @@ class PlaceholderScanner
         return substr_count($text, '|') + 1;
     }
 
+    /**
+     * The leading plural selector of each pipe-separated segment. For example
+     * `'{0} none|[1,19] some|[20,*] <span>many</span>'` yields
+     * `['{0}', '[1,19]', '[20,*]']`. Segments without an explicit selector
+     * yield an empty string, so the result stays positionally aligned with the
+     * segments.
+     *
+     * @return list<string>
+     */
+    public function pluralQualifiers(string $text): array
+    {
+        return array_map(
+            fn (string $segment): string => $this->leadingQualifier($segment),
+            explode('|', $text),
+        );
+    }
+
+    private function leadingQualifier(string $segment): string
+    {
+        if (preg_match('/^\s*([\[{])\s*([^\[\]{}]*?)\s*([\]}])/', $segment, $matches) !== 1) {
+            return '';
+        }
+
+        return $matches[1].preg_replace('/\s+/', '', $matches[2]).$matches[3];
+    }
+
     public function urls(string $text): array
     {
         preg_match_all('#https?://[^\s<>"\']+#', $text, $matches);
