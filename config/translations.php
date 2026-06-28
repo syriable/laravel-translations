@@ -6,6 +6,7 @@ use Syriable\Translations\Quality\Checks\GlossaryCheck;
 use Syriable\Translations\Quality\Checks\HtmlTagCheck;
 use Syriable\Translations\Quality\Checks\LengthRatioCheck;
 use Syriable\Translations\Quality\Checks\MissingPlaceholderCheck;
+use Syriable\Translations\Quality\Checks\PluralCheck;
 use Syriable\Translations\Quality\Checks\UnexpectedPlaceholderCheck;
 use Syriable\Translations\Quality\Checks\UrlEmailCheck;
 use Syriable\Translations\Quality\Checks\WhitespaceCheck;
@@ -143,6 +144,7 @@ return [
         'checks' => [
             MissingPlaceholderCheck::class,
             UnexpectedPlaceholderCheck::class,
+            PluralCheck::class,
             HtmlTagCheck::class,
             LengthRatioCheck::class,
             WhitespaceCheck::class,

@@ -64,6 +64,45 @@ it('flags and fixes internal double spaces', function (): void {
     expect(Translations::get('messages.accept', 'es'))->toBe('يجب قبول حقل :attribute.');
 });
 
+it('flags a plural translation that drops its selectors', function (): void {
+    config()->set('translations.quality.run_on_save', false);
+
+    Translations::set('messages.minutes', '{1} :value minute ago|[2,*] :value minutes ago', 'en');
+    $message = Translations::set('messages.minutes', ':value minute ago|:value minutes ago', 'es');
+
+    $inspector = app(Inspector::class);
+    $inspector->inspectAndStore($message->fresh(['locale']));
+
+    $issue = QualityIssue::query()->where('check', 'plural')->first();
+
+    expect($issue)->not->toBeNull();
+    expect($issue->severity->value)->toBe('error');
+});
+
+it('flags a plural translation that uses the wrong segment separator', function (): void {
+    config()->set('translations.quality.run_on_save', false);
+
+    Translations::set('messages.minutes', '{1} :value minute ago|[2,*] :value minutes ago', 'en');
+    $message = Translations::set('messages.minutes', ':value minute ago,:value minutes ago', 'es');
+
+    $inspector = app(Inspector::class);
+    $inspector->inspectAndStore($message->fresh(['locale']));
+
+    expect(QualityIssue::query()->where('check', 'plural')->exists())->toBeTrue();
+});
+
+it('does not flag a plural translation that preserves its selectors', function (): void {
+    config()->set('translations.quality.run_on_save', false);
+
+    Translations::set('messages.minutes', '{1} :value minute ago|[2,*] :value minutes ago', 'en');
+    $message = Translations::set('messages.minutes', '{1} منذ :value دقيقة|[2,*] منذ :value دقائق', 'es');
+
+    $inspector = app(Inspector::class);
+    $inspector->inspectAndStore($message->fresh(['locale']));
+
+    expect(QualityIssue::query()->where('check', 'plural')->exists())->toBeFalse();
+});
+
 it('does not flag the source locale against itself', function (): void {
     Translations::set('messages.welcome', 'Hello :name', 'en');
 
