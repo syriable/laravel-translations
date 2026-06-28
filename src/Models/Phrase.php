@@ -66,6 +66,26 @@ class Phrase extends TranslationModel
     }
 
     /**
+     * Whether the phrase defines any placeholder parameters that its
+     * translations are required to preserve.
+     */
+    public function hasPlaceholders(): bool
+    {
+        return $this->placeholderNames() !== [];
+    }
+
+    /**
+     * The placeholder parameters defined by the phrase, e.g.
+     * `[':name', '{count}']`.
+     *
+     * @return list<string>
+     */
+    public function placeholderNames(): array
+    {
+        return array_values($this->placeholders ?? []);
+    }
+
+    /**
      * Split a key into its prefix segments, treating `.`, `_` and `-` as
      * boundaries. `accepted_if` → `['accepted', 'if']`.
      *

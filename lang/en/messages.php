@@ -72,6 +72,7 @@ return [
     'validate' => [
         'queued' => 'Quality scan dispatched to the queue.',
         'fixed' => 'Auto-fixed :count issues.',
+        'missing_placeholders' => 'The translation is missing required placeholders: :placeholders.',
         'table' => [
             'checked' => 'Checked',
             'errors' => 'Errors',

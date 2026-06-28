@@ -72,6 +72,7 @@ return [
     'validate' => [
         'queued' => 'کوالٹی اسکین قطار میں بھیج دیا گیا۔',
         'fixed' => ':count مسائل خودکار طور پر حل کیے گئے۔',
+        'missing_placeholders' => 'ترجمے میں مطلوبہ پلیس ہولڈرز غائب ہیں: :placeholders۔',
         'table' => [
             'checked' => 'جانچے گئے',
             'errors' => 'خرابیاں',
