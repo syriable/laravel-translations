@@ -4,6 +4,7 @@ use Syriable\Translations\Enums\AiProvider;
 use Syriable\Translations\Quality\Checks\CasingCheck;
 use Syriable\Translations\Quality\Checks\GlossaryCheck;
 use Syriable\Translations\Quality\Checks\HtmlTagCheck;
+use Syriable\Translations\Quality\Checks\InconsistentPluralSelectorCheck;
 use Syriable\Translations\Quality\Checks\LengthRatioCheck;
 use Syriable\Translations\Quality\Checks\MissingPlaceholderCheck;
 use Syriable\Translations\Quality\Checks\UnexpectedPlaceholderCheck;
@@ -143,6 +144,7 @@ return [
         'checks' => [
             MissingPlaceholderCheck::class,
             UnexpectedPlaceholderCheck::class,
+            InconsistentPluralSelectorCheck::class,
             HtmlTagCheck::class,
             LengthRatioCheck::class,
             WhitespaceCheck::class,

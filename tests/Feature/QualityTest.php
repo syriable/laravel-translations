@@ -64,6 +64,24 @@ it('flags and fixes internal double spaces', function (): void {
     expect(Translations::get('messages.accept', 'es'))->toBe('يجب قبول حقل :attribute.');
 });
 
+it('flags a source plural string with inconsistent selectors', function (): void {
+    Translations::set('messages.count', 'There are none|[1,19] There are some|[20,*] There are many', 'en');
+    Translations::set('messages.count', 'Aucun|[1,19] Quelques|[20,*] Beaucoup', 'es');
+
+    $issue = QualityIssue::query()->where('check', 'inconsistent_plural_selector')->first();
+
+    expect($issue)->not->toBeNull();
+    expect($issue->severity->value)->toBe('warning');
+    expect($issue->meta['missing_segments'])->toBe([1]);
+});
+
+it('does not flag a fully-selectored source plural', function (): void {
+    Translations::set('messages.count', '{0} none|[1,19] some|[20,*] many', 'en');
+    Translations::set('messages.count', '{0} aucun|[1,19] quelques|[20,*] beaucoup', 'es');
+
+    expect(QualityIssue::query()->where('check', 'inconsistent_plural_selector')->exists())->toBeFalse();
+});
+
 it('does not flag the source locale against itself', function (): void {
     Translations::set('messages.welcome', 'Hello :name', 'en');
 

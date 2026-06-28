@@ -39,6 +39,16 @@ it('returns empty selectors for simple plurals', function (): void {
         ->toBe(['', '']);
 });
 
+it('reports segments missing a plural selector', function (): void {
+    expect($this->scanner->missingPluralSelectors('There are none|[1,19] some|[20,*] many'))
+        ->toBe([1]);
+});
+
+it('reports no missing selectors when they are consistent', function (): void {
+    expect($this->scanner->missingPluralSelectors('{0} none|[1,19] some|[20,*] many'))->toBe([])
+        ->and($this->scanner->missingPluralSelectors('one|many'))->toBe([]);
+});
+
 it('lists html tag names', function (): void {
     expect($this->scanner->htmlTags('<strong>Bold</strong> and <em>x</em>'))
         ->toEqualCanonicalizing(['strong', 'strong', 'em', 'em']);

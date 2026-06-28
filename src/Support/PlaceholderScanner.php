@@ -56,6 +56,34 @@ class PlaceholderScanner
         );
     }
 
+    /**
+     * The 1-based positions of pipe-separated segments that lack an explicit
+     * plural selector when the string mixes selectored and selectorless
+     * segments, e.g. `'none|[1,19] some|[20,*] many'` yields `[1]`. Returns an
+     * empty array when the selectors are consistent (all present or all
+     * absent) or the text is not plural.
+     *
+     * @return list<int>
+     */
+    public function missingPluralSelectors(string $text): array
+    {
+        $qualifiers = $this->pluralQualifiers($text);
+
+        if (array_filter($qualifiers) === []) {
+            return [];
+        }
+
+        $missing = [];
+
+        foreach ($qualifiers as $index => $qualifier) {
+            if ($qualifier === '') {
+                $missing[] = $index + 1;
+            }
+        }
+
+        return $missing;
+    }
+
     private function leadingQualifier(string $segment): string
     {
         if (preg_match('/^\s*([\[{])\s*([^\[\]{}]*?)\s*([\]}])/', $segment, $matches) !== 1) {
