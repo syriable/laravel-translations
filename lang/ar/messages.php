@@ -72,6 +72,8 @@ return [
     'validate' => [
         'queued' => 'تمت جدولة فحص الجودة في قائمة الانتظار.',
         'fixed' => 'تم إصلاح :count مشكلة تلقائيًا.',
+        'missing_placeholders' => 'الترجمة تفتقد العناصر النائبة المطلوبة: :placeholders.',
+        'plural_segments' => 'يجب أن تحتوي ترجمة الجمع على :expected صيغة مفصولة بخطوط عمودية (|)، تم العثور على :actual.',
         'table' => [
             'checked' => 'المفحوصة',
             'errors' => 'الأخطاء',

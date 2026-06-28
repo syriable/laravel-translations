@@ -72,6 +72,8 @@ return [
     'validate' => [
         'queued' => 'Quality scan dispatched to the queue.',
         'fixed' => 'Auto-fixed :count issues.',
+        'missing_placeholders' => 'The translation is missing required placeholders: :placeholders.',
+        'plural_segments' => 'The plural translation must have :expected variants separated by pipes (|), got :actual.',
         'table' => [
             'checked' => 'Checked',
             'errors' => 'Errors',
