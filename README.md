@@ -307,6 +307,7 @@ $quality->fix($qualityIssue);         // auto-fix a fixable issue (whitespace, c
 | --- | --- | --- |
 | `missing_placeholder` — a `:name`/`{count}` from the source is missing | error | — |
 | `unexpected_placeholder` — a placeholder not in the source | warning | — |
+| `inconsistent_plural_selector` — the source plural mixes selectored (`{0}`, `[1,19]`) and selectorless segments | warning | — |
 | `html_tag_mismatch` — HTML tags differ from the source | error | — |
 | `length_ratio` — translation length is outside the expected band | warning | — |
 | `whitespace` — leading/trailing whitespace differs | warning | ✅ |
