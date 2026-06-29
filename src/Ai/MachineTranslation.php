@@ -106,14 +106,16 @@ class MachineTranslation
 
     private function request(Phrase $phrase, Locale $target, string $source, array $options): TranslationRequest
     {
+        $context = $options['context'] ?? config('translations.ai.context', true);
+
         return new TranslationRequest(
             text: $source,
             sourceLocale: optional(Locale::source())->code ?? config('translations.source_locale'),
             targetLocale: $target->code,
             tone: $this->toneInstruction($options['tone'] ?? $target->tone),
-            note: $phrase->note,
-            usages: $this->usages($phrase),
-            siblings: $this->siblings($phrase),
+            note: $context ? $phrase->note : null,
+            usages: $context ? $this->usages($phrase) : [],
+            siblings: $context ? $this->siblings($phrase) : [],
             glossary: ($options['glossary'] ?? true) ? $this->glossary->pairsFor($source, $target->id) : [],
             variants: $options['variants'] ?? config('translations.ai.variants', 1),
             provider: AiProviders::sanitize($options['provider'] ?? null),

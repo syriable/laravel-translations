@@ -249,6 +249,7 @@ $ai->suggest($phrase, $germanLocale, ['variants' => 3]); // TranslationResult, w
 $ai->apply($phrase, $germanLocale, [             // translate + save the best variant
     'tone'     => 'formal',                       // neutral|formal|informal|friendly|technical
     'glossary' => true,                           // include matching glossary terms in the prompt
+    'context'  => true,                           // include developer note, usages and sibling keys
     'provider' => 'anthropic',                    // validated against ai.allowed_providers
     'by'       => 'ai-bot',
 ]);
@@ -256,8 +257,9 @@ $ai->estimate($phraseIds, 'de');                 // ['phrase_count','target_loca
 ```
 
 Prompts are context-aware (glossary terms, developer notes, where the key is used, sibling keys) and
-**fence untrusted context** so it can't act as instructions. Every call is logged to `tx_ai_usages`
-with an estimated cost from `ai.cost_rates`.
+**fence untrusted context** so it can't act as instructions. Context is on by default; pass
+`'context' => false` (or set `ai.context` to `false`) for a leaner, cheaper prompt — useful on large
+batch runs. Every call is logged to `tx_ai_usages` with an estimated cost from `ai.cost_rates`.
 
 Each suggestion in the returned `TranslationResult` carries a `value` (the translation), a `confidence`
 score, a `recommended` flag (exactly one variant is always recommended), and an optional `note` — a
@@ -506,6 +508,7 @@ return [
         'allowed_providers' => array_column(AiProvider::cases(), 'value'), // Syriable\Translations\Enums\AiProvider
         'variants'          => 3,
         'batch_size'        => 20,
+        'context'           => true, // include note/usages/siblings in the prompt (per-call overridable)
         'cost_rates'        => [ /* model => ['input' => ..., 'output' => ...] in USD per 1M chars */ ],
     ],
 
