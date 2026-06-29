@@ -32,6 +32,7 @@ Translations::export();                            // database → lang files
   - [Importing and exporting language files](#importing-and-exporting-language-files)
   - [AI translation](#ai-translation)
   - [Quality checks](#quality-checks)
+  - [Validation rules](#validation-rules)
   - [Glossary](#glossary)
   - [Revision history](#revision-history)
   - [Review workflow](#review-workflow)
@@ -299,7 +300,7 @@ $this->app->instance(Translator::class, new FakeTranslator(
 
 ### Quality checks
 
-Eight pluggable checks compare each translation against its source. They run automatically on every
+Ten pluggable checks compare each translation against its source. They run automatically on every
 save (when `quality.run_on_save` is on) and on demand.
 
 ```php
@@ -318,6 +319,7 @@ $quality->fix($qualityIssue);         // auto-fix a fixable issue (whitespace, c
 | --- | --- | --- |
 | `missing_placeholder` — a `:name`/`{count}` from the source is missing | error | — |
 | `unexpected_placeholder` — a placeholder not in the source | warning | — |
+| `plural` — the translation's plural selectors/segments don't match the source | error | — |
 | `inconsistent_plural_selector` — the source plural mixes selectored (`{0}`, `[1,19]`) and selectorless segments | warning | — |
 | `html_tag_mismatch` — HTML tags differ from the source | error | — |
 | `length_ratio` — translation length is outside the expected band | warning | — |
@@ -328,6 +330,35 @@ $quality->fix($qualityIssue);         // auto-fix a fixable issue (whitespace, c
 
 Disable a check by removing its class from `quality.checks`, or add your own implementing
 `Syriable\Translations\Contracts\QualityCheck`.
+
+### Validation rules
+
+For validating a translation value *as it's submitted* (e.g. in a form request or Livewire component),
+the package ships two reusable Laravel `ValidationRule`s under `Syriable\Translations\Rules`. Each takes
+the `Phrase` the value belongs to, so it can compare against the source and the phrase's metadata:
+
+```php
+use Syriable\Translations\Rules\TranslationPlaceholdersRule;
+use Syriable\Translations\Rules\TranslationPluralRule;
+
+$request->validate([
+    'value' => [
+        'required',
+        new TranslationPlaceholdersRule($phrase),  // every :name / {count} the key defines is present
+        new TranslationPluralRule($phrase),        // plural selectors/segments match the source
+    ],
+]);
+```
+
+- **`TranslationPlaceholdersRule`** — fails when the value drops a placeholder the phrase defines. Skips
+  empty values and phrases with no placeholders. Its detection logic is reusable directly:
+  `TranslationPlaceholdersRule::missingPlaceholders($phrase, $value)` returns the missing placeholders.
+- **`TranslationPluralRule`** — for plural phrases, requires the value to match the source: when the
+  source uses explicit selectors (`{0}`, `[1,19]`, `[20,*]`) every selector must be preserved exactly,
+  otherwise the pipe-separated variant count must match. Skips empty values and non-plural phrases.
+
+These complement the [quality checks](#quality-checks): the rules block bad input up front, while the
+checks audit already-stored translations.
 
 ### Glossary
 
