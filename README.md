@@ -261,6 +261,17 @@ Prompts are context-aware (glossary terms, developer notes, where the key is use
 `'context' => false` (or set `ai.context` to `false`) for a leaner, cheaper prompt — useful on large
 batch runs. Every call is logged to `tx_ai_usages` with an estimated cost from `ai.cost_rates`.
 
+To discover which providers are actually usable — allowlisted **and** configured with a key in `.env`
+(via the `laravel/ai` config) — call `AiProviders::usable()`. It returns a `Collection<AiProvider>`
+(Ollama is treated as usable without a key, since it authenticates via its URL):
+
+```php
+use Syriable\Translations\Ai\AiProviders;
+
+AiProviders::usable();                 // Collection<AiProvider> — e.g. [OpenAI, Anthropic]
+AiProviders::usable()->map->getLabel(); // ['OpenAI', 'Anthropic']
+```
+
 Each suggestion in the returned `TranslationResult` carries a `value` (the translation), a `confidence`
 score, a `recommended` flag (exactly one variant is always recommended), and an optional `note` — a
 concise, human-readable explanation of why that wording was chosen (terminology, common usage, natural
