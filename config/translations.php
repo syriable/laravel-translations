@@ -7,6 +7,7 @@ use Syriable\Translations\Quality\Checks\HtmlTagCheck;
 use Syriable\Translations\Quality\Checks\InconsistentPluralSelectorCheck;
 use Syriable\Translations\Quality\Checks\LengthRatioCheck;
 use Syriable\Translations\Quality\Checks\MissingPlaceholderCheck;
+use Syriable\Translations\Quality\Checks\PluralCheck;
 use Syriable\Translations\Quality\Checks\UnexpectedPlaceholderCheck;
 use Syriable\Translations\Quality\Checks\UrlEmailCheck;
 use Syriable\Translations\Quality\Checks\WhitespaceCheck;
@@ -121,6 +122,11 @@ return [
         'allowed_providers' => array_column(AiProvider::cases(), 'value'),
         'variants' => 3,
         'batch_size' => 20,
+
+        // Include per-phrase context (developer note, usage locations and
+        // sibling keys) in the prompt. Improves quality; disable to send a
+        // leaner, cheaper prompt. Overridable per call via the 'context' option.
+        'context' => true,
         'cost_rates' => [
             'gpt-4o-mini' => ['input' => 0.15, 'output' => 0.60],
             'gpt-4o' => ['input' => 2.50, 'output' => 10.00],
@@ -144,6 +150,7 @@ return [
         'checks' => [
             MissingPlaceholderCheck::class,
             UnexpectedPlaceholderCheck::class,
+            PluralCheck::class,
             InconsistentPluralSelectorCheck::class,
             HtmlTagCheck::class,
             LengthRatioCheck::class,

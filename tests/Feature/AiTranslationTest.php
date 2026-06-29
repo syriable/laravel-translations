@@ -39,6 +39,35 @@ it('forwards glossary terms and context into the request', function (): void {
     expect($this->fake->requests[0]->glossary)->toBe(['cart' => 'carrito']);
 });
 
+it('includes per-phrase context in the request by default', function (): void {
+    Translations::set('messages.cart', 'Open your cart', 'en');
+    Translations::set('messages.other', 'Another label', 'en');
+
+    $phrase = Phrase::query()->where('key', 'cart')->firstOrFail();
+    $phrase->update(['note' => 'Shopping cart button']);
+    $es = Locale::query()->where('code', 'es')->first();
+
+    Translations::ai()->suggest($phrase, $es);
+
+    expect($this->fake->requests[0]->note)->toBe('Shopping cart button')
+        ->and($this->fake->requests[0]->siblings)->toContain('other');
+});
+
+it('omits context from the request when context is disabled', function (): void {
+    Translations::set('messages.cart', 'Open your cart', 'en');
+    Translations::set('messages.other', 'Another label', 'en');
+
+    $phrase = Phrase::query()->where('key', 'cart')->firstOrFail();
+    $phrase->update(['note' => 'Shopping cart button']);
+    $es = Locale::query()->where('code', 'es')->first();
+
+    Translations::ai()->suggest($phrase, $es, ['context' => false]);
+
+    expect($this->fake->requests[0]->note)->toBeNull()
+        ->and($this->fake->requests[0]->usages)->toBe([])
+        ->and($this->fake->requests[0]->siblings)->toBe([]);
+});
+
 it('exposes an explanatory note on the suggestion result', function (): void {
     Translations::set('messages.greeting', 'Hello there', 'en');
 
