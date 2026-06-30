@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Syriable\Translations\Ai\MachineReview;
 use Syriable\Translations\Ai\MachineTranslation;
 use Syriable\Translations\Analytics\Insights;
 use Syriable\Translations\Enums\MessageStatus;
@@ -205,6 +206,11 @@ class TranslationManager
     public function ai(): MachineTranslation
     {
         return app(MachineTranslation::class);
+    }
+
+    public function aiReview(): MachineReview
+    {
+        return app(MachineReview::class);
     }
 
     public function quality(): Inspector

@@ -25,6 +25,12 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
 - **Quality checks.** Eight pluggable checks (missing/unexpected placeholder, HTML, length ratio,
   whitespace, casing, URL/email, glossary) that run on save and on demand, with auto-fix for
   whitespace and casing.
+- **AI quality review** via the `laravel/ai` SDK behind a swappable `Reviewer` contract:
+  `Translations::aiReview()->review($locale)` (and the `translations:ai-review` command) batch the
+  locale's translated source/target pairs to the model to flag unnatural phrasing, gender issues,
+  pluralization errors, context mismatches and cross-key inconsistencies. Returns a `ReviewResult`
+  of severity-scored `ReviewIssue`s with per-batch usage logging; untrusted text is fenced and
+  hallucinated keys are dropped.
 - **Revision history** with single rollback and bulk rollback by author or date.
 - **Glossary** of per-locale approved terminology feeding AI prompts and the glossary check.
 - **Analytics.** Per-locale and per-bundle coverage, velocity, stale detection and contributor

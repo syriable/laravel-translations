@@ -123,6 +123,13 @@ return [
         'variants' => 3,
         'batch_size' => 20,
 
+        // AI quality review (translations:ai-review). Translated messages are
+        // sent to the model in batches of this many source/target pairs per
+        // request to keep each prompt within token limits.
+        'review' => [
+            'batch_size' => 50,
+        ],
+
         // Include per-phrase context (developer note, usage locations and
         // sibling keys) in the prompt. Improves quality; disable to send a
         // leaner, cheaper prompt. Overridable per call via the 'context' option.

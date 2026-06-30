@@ -3,16 +3,19 @@
 namespace Syriable\Translations;
 
 use Illuminate\Support\ServiceProvider;
+use Syriable\Translations\Ai\AiReviewer;
 use Syriable\Translations\Ai\AiTranslator;
 use Syriable\Translations\Commands\ExportCommand;
 use Syriable\Translations\Commands\ImportCommand;
 use Syriable\Translations\Commands\InstallCommand;
 use Syriable\Translations\Commands\PruneRevisionsCommand;
+use Syriable\Translations\Commands\ReviewCommand;
 use Syriable\Translations\Commands\ScanLooseCommand;
 use Syriable\Translations\Commands\ScanUsageCommand;
 use Syriable\Translations\Commands\StatusCommand;
 use Syriable\Translations\Commands\TranslateCommand;
 use Syriable\Translations\Commands\ValidateCommand;
+use Syriable\Translations\Contracts\Reviewer;
 use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Events\ImportFinished;
 use Syriable\Translations\Events\MessageSaved;
@@ -28,6 +31,7 @@ class TranslationsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/translations.php', 'translations');
 
         $this->app->bind(Translator::class, AiTranslator::class);
+        $this->app->bind(Reviewer::class, AiReviewer::class);
 
         $this->app->singleton(TranslationManager::class);
     }
@@ -79,6 +83,7 @@ class TranslationsServiceProvider extends ServiceProvider
             StatusCommand::class,
             TranslateCommand::class,
             ValidateCommand::class,
+            ReviewCommand::class,
             ScanUsageCommand::class,
             ScanLooseCommand::class,
             PruneRevisionsCommand::class,

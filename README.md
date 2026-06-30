@@ -331,6 +331,61 @@ $quality->fix($qualityIssue);         // auto-fix a fixable issue (whitespace, c
 Disable a check by removing its class from `quality.checks`, or add your own implementing
 `Syriable\Translations\Contracts\QualityCheck`.
 
+### AI quality review
+
+The deterministic checks above catch *mechanical* problems (placeholders, HTML, plural selectors).
+For the *linguistic* ones they can't see — unnatural phrasing, gender issues, pluralization errors,
+context mismatches and cross-key inconsistencies — the package ships an **AI reviewer**. Like AI
+translation it requires `laravel/ai` and `ai.enabled = true`, and runs through a swappable `Reviewer`
+contract so it can be faked in tests with no HTTP.
+
+```php
+$review = Translations::aiReview();          // MachineReview
+
+$result = $review->review($germanLocale);    // ReviewResult — reviews every translated message
+$review->review($germanLocale, [
+    'phrase_ids' => [1, 2, 3],                // limit the review to specific phrases
+    'provider'   => 'anthropic',             // validated against ai.allowed_providers
+]);
+```
+
+It gathers the source/target pairs for the locale's translated messages, sends them to the model in
+batches (`ai.review.batch_size`, default 50) and returns a `ReviewResult`:
+
+```php
+$result->hasIssues();          // bool
+$result->issues;               // array<ReviewIssue>{ key, severity, description, suggestion }
+$result->forKey('cart.checkout'); // the issues reported for one dotted key
+$result->countsBySeverity();   // ['error' => 1, 'warning' => 3, 'info' => 0]
+```
+
+Each `ReviewIssue` carries the dotted `key` it refers to, a `severity` mapped onto the package's own
+`Severity` scale (high → error, medium → warning, low → info), a `description` of the problem and an
+optional `suggestion`, both written in the **source language**. The reviewer **fences untrusted
+source/target text** so it can't act as instructions, drops any issue the model invents for a key that
+wasn't reviewed, and logs every batch to `tx_ai_usages` with an estimated cost. Unlike the
+deterministic checks it does **not** persist `QualityIssue` rows — it's an on-demand review you run
+before approving a batch.
+
+Run it from the CLI (exits non-zero when high-severity issues are found, so it slots into CI):
+
+```bash
+php artisan translations:ai-review de --provider=anthropic
+```
+
+**Swapping the engine** (e.g. in tests) is a one-liner — `Reviewer` has a single method:
+
+```php
+use Syriable\Translations\Contracts\Reviewer;
+use Syriable\Translations\Ai\FakeReviewer;
+use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Support\ReviewIssue;
+
+$this->app->instance(Reviewer::class, new FakeReviewer(
+    fn ($request) => [new ReviewIssue('cart.checkout', Severity::Warning, 'Too informal.', 'Use the formal register.')],
+));
+```
+
 ### Validation rules
 
 For validating a translation value *as it's submitted* (e.g. in a form request or Livewire component),
@@ -468,6 +523,7 @@ Every method on the `Translations` facade (backed by `TranslationManager`):
 | `export(array $options = [])` | `ExportSummary` | DB → disk. Options: `locale`, `bundle`, `lang_path`, `source`. |
 | `translate(string $key, string $locale, array $options = [])` | `?Message` | AI-translate a single key and save it. |
 | `ai()` | `MachineTranslation` | The AI translation service. |
+| `aiReview()` | `MachineReview` | The AI quality-review service. |
 | `quality()` | `Inspector` | The quality-check service. |
 | `glossary()` | `Glossary` | The glossary service. |
 | `insights()` | `Insights` | The analytics service. |
@@ -481,6 +537,7 @@ The sub-services:
 | Service | Methods |
 | --- | --- |
 | `MachineTranslation` | `suggest(Phrase, Locale, array)`, `apply(Phrase, Locale, array)`, `translateOpen(Locale, array): int`, `estimate(array $phraseIds, string $locale): array` |
+| `MachineReview` | `review(Locale, array): ReviewResult` |
 | `Inspector` | `inspect(Message): array`, `inspectAndStore(Message): array`, `scan(?int $localeId): array`, `fix(QualityIssue): bool` |
 | `Glossary` | `define(string, ?string, bool, bool, ?string): Term`, `translate(Term, int, string, ?string): TermDefinition`, `forget(Term)`, `matching(string, int): Collection`, `pairsFor(string, int): array` |
 | `RevisionRollback` | `toRevision(Revision, ?string): Message`, `byMember(string, ?string $from, ?string $to, ?string $by): array`, `afterDate(string, ?int $localeId, ?string $by): array` |
@@ -498,6 +555,7 @@ translations:export             DB → lang files           (--locale=, --bundle
 translations:status             Coverage per locale/bundle (--locale=, --bundles, --bundle=)
 translations:translate {locale} AI translate              (--key=, --all, --provider=, --queue)
 translations:validate           Run quality checks        (--locale=, --fix, --queue)
+translations:ai-review {locale}  AI-review translation quality (--provider=)
 translations:scan-usage         Record where keys are used (--path=, --queue)
 translations:scan-loose         Detect hardcoded strings   (--path=, --queue)
 translations:prune-revisions    Prune old revision history (--days=, --dry-run)
@@ -551,6 +609,7 @@ return [
         'allowed_providers' => array_column(AiProvider::cases(), 'value'), // Syriable\Translations\Enums\AiProvider
         'variants'          => 3,
         'batch_size'        => 20,
+        'review'            => ['batch_size' => 50], // source/target pairs per AI quality-review request
         'context'           => true, // include note/usages/siblings in the prompt (per-call overridable)
         'cost_rates'        => [ /* model => ['input' => ..., 'output' => ...] in USD per 1M chars */ ],
     ],
