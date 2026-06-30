@@ -69,6 +69,17 @@ return [
         'done' => 'Translated :count messages into [:code].',
     ],
 
+    'ai_review' => [
+        'clean' => 'No quality issues found in [:code].',
+        'done' => 'Reviewed [:code]: :errors errors, :warnings warnings, :info suggestions.',
+        'table' => [
+            'key' => 'Key',
+            'severity' => 'Severity',
+            'detail' => 'Issue',
+            'suggestion' => 'Suggestion',
+        ],
+    ],
+
     'validate' => [
         'queued' => 'Quality scan dispatched to the queue.',
         'fixed' => 'Auto-fixed :count issues.',
