@@ -27,8 +27,11 @@ class FakeTranslator implements Translator
         $variants = [];
 
         for ($i = 0; $i < max(1, $request->variants); $i++) {
+            $variantValue = $i === 0 ? $value : "{$value} ({$i})";
+
             $variants[] = [
-                'value' => $i === 0 ? $value : "{$value} ({$i})",
+                'value' => $variantValue,
+                'base_value' => $variantValue,
                 'confidence' => 0.9 - ($i * 0.1),
                 'recommended' => $i === 0,
                 'note' => $i === 0 ? "Fake explanation in {$request->sourceLocale}." : null,

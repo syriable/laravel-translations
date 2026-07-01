@@ -151,3 +151,55 @@ it('drops empty values and normalizes missing fields', function (): void {
         'note' => null,
     ]);
 });
+
+it('uses the model-provided base_value and keeps value as proposed', function (): void {
+    $variants = (new SuggestionParser)->parse([
+        [
+            'value' => 'Translate to Arabic, for example: "مرحبا".',
+            'base_value' => 'مرحبا',
+            'confidence' => 0.9,
+            'recommended' => true,
+        ],
+    ]);
+
+    expect($variants[0]['value'])->toBe('Translate to Arabic, for example: "مرحبا".');
+    expect($variants[0]['base_value'])->toBe('مرحبا');
+});
+
+it('falls back to the value when base_value is absent', function (): void {
+    $variants = (new SuggestionParser)->parse([
+        ['value' => 'Hola', 'confidence' => 0.9],
+    ]);
+
+    expect($variants[0]['base_value'])->toBe('Hola');
+});
+
+it('unwraps surrounding quotes from a base_value', function (): void {
+    $variants = (new SuggestionParser)->parse([
+        ['value' => '«مرحبا»', 'base_value' => '"مرحبا"'],
+    ]);
+
+    expect($variants[0]['base_value'])->toBe('مرحبا');
+});
+
+it('extracts the framed translation from the value when base_value is missing', function (): void {
+    // The exact failure the user reported: the translation is buried in an
+    // instruction, and the model did not fill base_value.
+    $value = 'Translate the text to Arabic, for example: "يجب قبول حقل :attribute عندما يكون :other هو :value." Ensure all placeholders (:attribute, :other, :value) are preserved exactly as they appear in the source.';
+
+    $variants = (new SuggestionParser)->parse([
+        ['value' => $value, 'confidence' => 0.8, 'recommended' => true],
+    ]);
+
+    expect($variants[0]['value'])->toBe($value);
+    expect($variants[0]['base_value'])->toBe('يجب قبول حقل :attribute عندما يكون :other هو :value.');
+});
+
+it('does not truncate a translation that legitimately contains a quote', function (): void {
+    // No colon precedes the quote, so the framing extractor must not fire.
+    $variants = (new SuggestionParser)->parse([
+        ['value' => 'He said "hello" warmly'],
+    ]);
+
+    expect($variants[0]['base_value'])->toBe('He said "hello" warmly');
+});

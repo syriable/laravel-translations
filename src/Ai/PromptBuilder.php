@@ -53,6 +53,7 @@ class PromptBuilder
         }
 
         $lines[] = "Each suggestion's value must contain only the translated text — never a JSON list, multiple translations, or commentary.";
+        $lines[] = "For each suggestion also add a 'base_value': the translation on its own — the exact string to store in the language file. It must contain nothing but the translated text: no surrounding quotes, no 'for example:' or 'translate to …' framing, no labels, notes, or explanations.";
         $lines[] = "For each suggestion add a 'note': a concise explanation (one or two sentences) of why the wording was chosen — terminology, common usage, standard or technically accurate phrasing, context suitability, or framework conventions when relevant.";
         $lines[] = "Write the note in {$request->sourceLocale} (the translator's own language, i.e. the source language), not in the target language. Do not repeat the translated text in the note and do not mention confidence scores.";
         $lines[] = "Translate the following text:\n\n«".$this->fence($request->text).'»';

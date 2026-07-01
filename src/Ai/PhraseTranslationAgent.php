@@ -35,6 +35,7 @@ class PhraseTranslationAgent implements Agent, HasStructuredOutput
             'suggestions' => $schema->array()->items(
                 $schema->object([
                     'value' => $schema->string()->required(),
+                    'base_value' => $schema->string()->required(),
                     'confidence' => $schema->number()->min(0)->max(1)->required(),
                     'recommended' => $schema->boolean(),
                     'note' => $schema->string(),

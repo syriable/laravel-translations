@@ -12,9 +12,26 @@ class TranslationResult
         public readonly int $outputChars = 0,
     ) {}
 
+    /**
+     * The clean, copy/store-ready translation for the recommended (or first)
+     * variant — the exact string to write to a language file, without any
+     * framing the model may have added. Falls back to the proposed value.
+     */
     public function best(): ?string
     {
-        return $this->recommended()['value'] ?? $this->variants[0]['value'] ?? null;
+        $recommended = $this->recommended() ?? [];
+
+        return $recommended['base_value'] ?? $recommended['value'] ?? null;
+    }
+
+    /**
+     * The translation exactly as the model proposed it, which may include
+     * surrounding framing (quotes, an "e.g. …" example, etc.). Useful for
+     * display; use best() for the value to store or copy.
+     */
+    public function proposed(): ?string
+    {
+        return ($this->recommended() ?? [])['value'] ?? null;
     }
 
     /**
@@ -28,7 +45,7 @@ class TranslationResult
     /**
      * The recommended variant, falling back to the first one.
      *
-     * @return array{value: string, confidence: float|null, recommended?: bool, note: string|null}|null
+     * @return array{value: string, base_value?: string, confidence: float|null, recommended?: bool, note: string|null}|null
      */
     public function recommended(): ?array
     {
