@@ -3,23 +3,19 @@
 namespace Syriable\Translations\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * @property int $id
+ * @property int $message_id
  * @property string|null $member_id
- * @property string $action
- * @property string|null $subject_type
- * @property string|null $subject_id
+ * @property string $body
  * @property array|null $meta
+ * @property-read Message $message
  * @property-read Member|null $member
- * @property-read \Illuminate\Database\Eloquent\Model|null $subject
  */
-class Activity extends TranslationModel
+class Comment extends TranslationModel
 {
-    public const UPDATED_AT = null;
-
-    protected string $table_ = 'activities';
+    protected string $table_ = 'comments';
 
     protected $guarded = [];
 
@@ -30,9 +26,9 @@ class Activity extends TranslationModel
         ];
     }
 
-    public function subject(): MorphTo
+    public function message(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(Message::class);
     }
 
     public function member(): BelongsTo

@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Syriable\Translations\Enums\MessageStatus;
+use Syriable\Translations\Events\CommentPosted;
 use Syriable\Translations\Events\MessageSaved;
+use Syriable\Translations\Events\MessageStatusChanged;
 
 /**
  * @property int $id
@@ -41,6 +44,8 @@ class Message extends TranslationModel
     ];
 
     protected ?string $originalValueBeforeSave = null;
+
+    protected MessageStatus|string|null $originalStatusBeforeSave = null;
 
     protected static ?string $stampReason = null;
 
@@ -98,6 +103,16 @@ class Message extends TranslationModel
         return $this->hasMany(QualityIssue::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function activities(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject');
+    }
+
     public function scopeTranslated(Builder $query): Builder
     {
         return $query->where('status', '!=', MessageStatus::Open->value);
@@ -138,13 +153,42 @@ class Message extends TranslationModel
         }
     }
 
+    public function comment(string $body, ?string $memberId = null, array $meta = []): Comment
+    {
+        $comment = $this->comments()->create([
+            'member_id' => $memberId,
+            'body' => $body,
+            'meta' => $meta,
+        ]);
+
+        event(new CommentPosted($comment));
+
+        return $comment;
+    }
+
     protected static function booted(): void
     {
         static::saving(function (Message $message): void {
             $message->originalValueBeforeSave = $message->getOriginal('value');
+            $message->originalStatusBeforeSave = $message->getOriginal('status');
         });
 
         static::saved(function (Message $message): void {
+            if ($message->wasChanged('status') && $message->wasRecentlyCreated === false) {
+                $oldStatus = $message->originalStatusBeforeSave instanceof MessageStatus
+                    ? $message->originalStatusBeforeSave
+                    : MessageStatus::tryFrom((string) $message->originalStatusBeforeSave);
+
+                event(new MessageStatusChanged(
+                    $message,
+                    $oldStatus,
+                    $message->status,
+                    static::$stampReason,
+                    static::$stampChangedBy,
+                    static::$stampMeta,
+                ));
+            }
+
             if (! $message->wasChanged('value') && $message->wasRecentlyCreated === false) {
                 return;
             }
