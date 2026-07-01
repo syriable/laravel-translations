@@ -22,6 +22,9 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
   use their slash path as the bundle name (Laravel group convention).
 - **AI translation** via the `laravel/ai` SDK behind a swappable `Translator` contract, with
   glossary/context-aware prompts, multiple variants, cost estimation, and per-call usage logging.
+  Each suggestion exposes a clean, copy/store-ready `base_value` (via `TranslationResult::best()`)
+  alongside the model's proposed text (`proposed()`), so framing like `for example: "…"` never leaks
+  into stored translations.
 - **Quality checks.** Eight pluggable checks (missing/unexpected placeholder, HTML, length ratio,
   whitespace, casing, URL/email, glossary) that run on save and on demand, with auto-fix for
   whitespace and casing.

@@ -273,19 +273,27 @@ AiProviders::usable();                 // Collection<AiProvider> — e.g. [OpenA
 AiProviders::usable()->map->getLabel(); // ['OpenAI', 'Anthropic']
 ```
 
-Each suggestion in the returned `TranslationResult` carries a `value` (the translation), a `confidence`
-score, a `recommended` flag (exactly one variant is always recommended), and an optional `note` — a
-concise, human-readable explanation of why that wording was chosen (terminology, common usage, natural
-phrasing, framework conventions), written in the **source language** so the translator reading it
-understands the reasoning. Read the recommended variant directly:
+Each suggestion in the returned `TranslationResult` carries a `value` (the translation as proposed), a
+`base_value` (the **clean, copy/store-ready** translation — the exact string to write to a language
+file, stripped of any framing the model may add such as `Translate to German, for example: "…"`), a
+`confidence` score, a `recommended` flag (exactly one variant is always recommended), and an optional
+`note` — a concise, human-readable explanation of why that wording was chosen (terminology, common
+usage, natural phrasing, framework conventions), written in the **source language** so the translator
+reading it understands the reasoning. Read the recommended variant directly:
 
 ```php
 $result = $ai->suggest($phrase, $germanLocale, ['variants' => 3]);
 
-$result->best();        // the recommended translation string
+$result->best();        // the clean translation to store/copy (from base_value)
+$result->proposed();    // the translation exactly as the model phrased it (may include framing)
 $result->note();        // why it was chosen, e.g. "Standard term used in German UIs."
 $result->recommended(); // the full recommended variant array
 ```
+
+`base_value` comes from a dedicated structured-output field the model fills, and is cleaned defensively
+(surrounding quotes stripped, and the quoted translation lifted out of an `e.g. "…"` example) so a
+"copy" button always gets just the translation. `apply()` stores `best()`, so the value written to your
+catalog is the clean one even when the model wraps its answer in commentary.
 
 **Swapping the engine** (e.g. in tests) is a one-liner — `Translator` has a single method:
 
