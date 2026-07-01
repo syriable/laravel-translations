@@ -71,7 +71,7 @@ return [
 
     'ai_review' => [
         'clean' => 'No quality issues found in [:code].',
-        'done' => 'Reviewed [:code]: :errors errors, :warnings warnings, :info suggestions.',
+        'done' => 'Reviewed [:code]: :high high, :medium medium, :low low-priority issues.',
         'table' => [
             'key' => 'Key',
             'severity' => 'Severity',
@@ -103,6 +103,11 @@ return [
             'error' => 'Error',
             'warning' => 'Warning',
             'info' => 'Info',
+        ],
+        'review_severity' => [
+            'low' => 'Low',
+            'medium' => 'Medium',
+            'high' => 'High',
         ],
     ],
 ];

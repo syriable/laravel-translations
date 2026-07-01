@@ -2,21 +2,11 @@
 
 namespace Syriable\Translations\Ai;
 
-use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Enums\ReviewSeverity;
 use Syriable\Translations\Support\ReviewIssue;
 
 class ReviewParser
 {
-    /**
-     * The AI reports severities as low/medium/high; map them onto the package's
-     * own Severity scale so review issues read the same as deterministic ones.
-     */
-    private const SEVERITY = [
-        'high' => Severity::Error,
-        'medium' => Severity::Warning,
-        'low' => Severity::Info,
-    ];
-
     /**
      * Turn the raw structured-output issues into normalized ReviewIssue objects:
      * coerce the fields, map the severity, drop empty descriptions, and discard
@@ -54,17 +44,12 @@ class ReviewParser
 
             $parsed[] = new ReviewIssue(
                 key: $key,
-                severity: $this->severity($issue['severity'] ?? null),
+                severity: ReviewSeverity::fromModel($issue['severity'] ?? null),
                 description: $description,
                 suggestion: $suggestion === '' ? null : $suggestion,
             );
         }
 
         return $parsed;
-    }
-
-    private function severity(mixed $severity): Severity
-    {
-        return self::SEVERITY[strtolower(trim((string) $severity))] ?? Severity::Warning;
     }
 }

@@ -71,7 +71,7 @@ return [
 
     'ai_review' => [
         'clean' => 'لم يتم العثور على مشكلات جودة في [:code].',
-        'done' => 'تمت مراجعة [:code]: :errors أخطاء، :warnings تحذيرات، :info اقتراحات.',
+        'done' => 'تمت مراجعة [:code]: :high عالية، :medium متوسطة، :low منخفضة الأولوية.',
         'table' => [
             'key' => 'المفتاح',
             'severity' => 'الخطورة',
@@ -103,6 +103,11 @@ return [
             'error' => 'خطأ',
             'warning' => 'تحذير',
             'info' => 'معلومات',
+        ],
+        'review_severity' => [
+            'low' => 'منخفضة',
+            'medium' => 'متوسطة',
+            'high' => 'عالية',
         ],
     ],
 ];

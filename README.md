@@ -356,18 +356,18 @@ batches (`ai.review.batch_size`, default 50) and returns a `ReviewResult`:
 $result->hasIssues();          // bool
 $result->issues;               // array<ReviewIssue>{ key, severity, description, suggestion }
 $result->forKey('cart.checkout'); // the issues reported for one dotted key
-$result->countsBySeverity();   // ['error' => 1, 'warning' => 3, 'info' => 0]
+$result->countsBySeverity();   // ['high' => 1, 'medium' => 3, 'low' => 0]
 ```
 
-Each `ReviewIssue` carries the dotted `key` it refers to, a `severity` mapped onto the package's own
-`Severity` scale (high → error, medium → warning, low → info), a `description` of the problem and an
-optional `suggestion`, both written in the **source language**. The reviewer **fences untrusted
-source/target text** so it can't act as instructions, drops any issue the model invents for a key that
-wasn't reviewed, and logs every batch to `tx_ai_usages` with an estimated cost. Unlike the
-deterministic checks it does **not** persist `QualityIssue` rows — it's an on-demand review you run
-before approving a batch.
+Each `ReviewIssue` carries the dotted `key` it refers to, a `severity` as a dedicated
+`ReviewSeverity` (`Low`, `Medium`, `High` — the reviewer's own priority scale, distinct from the
+deterministic checks' `Severity`), a `description` of the problem and an optional `suggestion`, both
+written in the **source language**. The reviewer **fences untrusted source/target text** so it can't
+act as instructions, drops any issue the model invents for a key that wasn't reviewed, and logs every
+batch to `tx_ai_usages` with an estimated cost. Unlike the deterministic checks it does **not** persist
+`QualityIssue` rows — it's an on-demand review you run before approving a batch.
 
-Run it from the CLI (exits non-zero when high-severity issues are found, so it slots into CI):
+Run it from the CLI (exits non-zero when high-priority issues are found, so it slots into CI):
 
 ```bash
 php artisan translations:ai-review de --provider=anthropic
@@ -378,11 +378,11 @@ php artisan translations:ai-review de --provider=anthropic
 ```php
 use Syriable\Translations\Contracts\Reviewer;
 use Syriable\Translations\Ai\FakeReviewer;
-use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Enums\ReviewSeverity;
 use Syriable\Translations\Support\ReviewIssue;
 
 $this->app->instance(Reviewer::class, new FakeReviewer(
-    fn ($request) => [new ReviewIssue('cart.checkout', Severity::Warning, 'Too informal.', 'Use the formal register.')],
+    fn ($request) => [new ReviewIssue('cart.checkout', ReviewSeverity::Medium, 'Too informal.', 'Use the formal register.')],
 ));
 ```
 
@@ -684,7 +684,8 @@ In `Syriable\Translations\Enums`:
 - **`MessageStatus`** — `Open`, `Draft`, `PendingReview`, `Approved`. Methods: `label()`, `isTranslated()`.
 - **`MemberRole`** — `Owner`, `Admin`, `Reviewer`, `Translator`, `Viewer`. Methods: `level()`, `isAtLeast()`, `canTranslate()`, `canReview()`, `canManage()`.
 - **`RevisionReason`** — `Manual`, `Import`, `Ai`, `Rollback`, `Bulk`. Method: `label()`.
-- **`Severity`** — `Error`, `Warning`, `Info`. Method: `order()`.
+- **`Severity`** — `Error`, `Warning`, `Info` (deterministic quality checks). Method: `order()`.
+- **`ReviewSeverity`** — `Low`, `Medium`, `High` (AI quality-review priority). Methods: `order()`, `fromModel()`.
 - **`LooseStringStatus`** — `Pending`, `Converted`, `Ignored`, `Resolved`.
 
 ---

@@ -29,8 +29,8 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
   `Translations::aiReview()->review($locale)` (and the `translations:ai-review` command) batch the
   locale's translated source/target pairs to the model to flag unnatural phrasing, gender issues,
   pluralization errors, context mismatches and cross-key inconsistencies. Returns a `ReviewResult`
-  of severity-scored `ReviewIssue`s with per-batch usage logging; untrusted text is fenced and
-  hallucinated keys are dropped.
+  of `ReviewIssue`s, each graded on a dedicated `ReviewSeverity` (`Low`/`Medium`/`High`) priority
+  scale, with per-batch usage logging; untrusted text is fenced and hallucinated keys are dropped.
 - **Revision history** with single rollback and bulk rollback by author or date.
 - **Glossary** of per-locale approved terminology feeding AI prompts and the glossary check.
 - **Analytics.** Per-locale and per-bundle coverage, velocity, stale detection and contributor
