@@ -29,7 +29,7 @@ class SuggestionParser
 
                 return [
                     'value' => $value,
-                    'base_value' => $this->baseValue($suggestion['base_value'] ?? null, $value),
+                    'base_value' => SuggestionCleaner::plain($suggestion['base_value'] ?? null, $value),
                     'confidence' => isset($suggestion['confidence']) ? (float) $suggestion['confidence'] : null,
                     'recommended' => (bool) ($suggestion['recommended'] ?? false),
                     'note' => isset($suggestion['note']) && (string) $suggestion['note'] !== ''
@@ -42,64 +42,6 @@ class SuggestionParser
             ->all();
 
         return $this->normalizeRecommended($variants);
-    }
-
-    /**
-     * Resolve the clean, copy/store-ready translation. Prefer the model's
-     * dedicated `base_value` field; when it is missing, recover the translation
-     * from the (possibly framed) `value` by unwrapping surrounding quotes or
-     * pulling the quoted translation out of an example like
-     * `Translate to Arabic, for example: "…"`.
-     */
-    private function baseValue(mixed $base, string $value): string
-    {
-        $base = $this->unquote(trim((string) $base));
-
-        if ($base !== '') {
-            return $base;
-        }
-
-        $unquoted = $this->unquote($value);
-
-        if ($unquoted !== $value) {
-            return $unquoted;
-        }
-
-        return $this->extractFramedTranslation($value) ?? $value;
-    }
-
-    /**
-     * Strip a single matched pair of surrounding quotes (straight, curly,
-     * single or guillemets) and trim the result.
-     */
-    private function unquote(string $text): string
-    {
-        foreach ([['"', '"'], ['“', '”'], ["'", "'"], ['«', '»']] as [$open, $close]) {
-            if (mb_strlen($text) >= mb_strlen($open) + mb_strlen($close)
-                && str_starts_with($text, $open)
-                && str_ends_with($text, $close)) {
-                return trim(mb_substr($text, mb_strlen($open), mb_strlen($text) - mb_strlen($open) - mb_strlen($close)));
-            }
-        }
-
-        return $text;
-    }
-
-    /**
-     * Pull the translation out of a framed value such as
-     * `Translate the text to Arabic, for example: "الترجمة."`. Only fires when a
-     * quoted run follows a colon, so a translation that legitimately contains a
-     * quoted phrase (e.g. `He said "hi"`) is left untouched.
-     */
-    private function extractFramedTranslation(string $value): ?string
-    {
-        if (preg_match('/:\s*["“«\'](.+?)["”»\']/u', $value, $matches) !== 1) {
-            return null;
-        }
-
-        $inner = trim($matches[1]);
-
-        return $inner === '' ? null : $inner;
     }
 
     /**

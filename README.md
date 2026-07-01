@@ -362,15 +362,18 @@ batches (`ai.review.batch_size`, default 50) and returns a `ReviewResult`:
 
 ```php
 $result->hasIssues();          // bool
-$result->issues;               // array<ReviewIssue>{ key, severity, description, suggestion }
+$result->issues;               // array<ReviewIssue>{ key, severity, description, suggestion, baseSuggestion }
 $result->forKey('cart.checkout'); // the issues reported for one dotted key
 $result->countsBySeverity();   // ['high' => 1, 'medium' => 3, 'low' => 0]
 ```
 
 Each `ReviewIssue` carries the dotted `key` it refers to, a `severity` as a dedicated
 `ReviewSeverity` (`Low`, `Medium`, `High` — the reviewer's own priority scale, distinct from the
-deterministic checks' `Severity`), a `description` of the problem and an optional `suggestion`, both
-written in the **source language**. The reviewer **fences untrusted source/target text** so it can't
+deterministic checks' `Severity`), a `description` of the problem (in the **source language**), an
+optional `suggestion` explaining the fix, and — when the reviewer proposes a corrected translation — a
+`baseSuggestion`: that correction on its own, in the target language, cleaned of any framing so it can
+be copied straight into the catalog (same treatment as a translation suggestion's `base_value`). The
+reviewer **fences untrusted source/target text** so it can't
 act as instructions, drops any issue the model invents for a key that wasn't reviewed, and logs every
 batch to `tx_ai_usages` with an estimated cost. Unlike the deterministic checks it does **not** persist
 `QualityIssue` rows — it's an on-demand review you run before approving a batch.

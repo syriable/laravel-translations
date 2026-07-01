@@ -30,7 +30,7 @@ class TranslationReviewAgent implements Agent, HasStructuredOutput
             'Placeholders like :name and {count}, HTML tags, and URLs and emails must be preserved exactly from the source.',
             "Use the 'key' field to identify which translation each issue refers to, copying the key verbatim.",
             "Set 'severity' to 'high' for problems that change meaning or break placeholders, 'medium' for awkward, ambiguous or inconsistent wording, and 'low' for minor or stylistic suggestions.",
-            "Write each 'description' and 'suggestion' in {$this->sourceLocale} (the reviewer's own language).",
+            "Write each 'description' in {$this->sourceLocale} (the reviewer's own language). When you propose a corrected translation, put your explanation in 'suggestion' and also provide 'base_suggestion': the corrected translation on its own, in the target language — the exact string to store in the language file, with no surrounding quotes, no 'for example:' framing, no labels, notes, or explanations.",
             'Return an array of issues found, or an empty array if the translations are good. Respond via the structured output schema only.',
         ];
 
@@ -46,6 +46,7 @@ class TranslationReviewAgent implements Agent, HasStructuredOutput
                     'severity' => $schema->string()->enum(['low', 'medium', 'high'])->required(),
                     'description' => $schema->string()->required(),
                     'suggestion' => $schema->string(),
+                    'base_suggestion' => $schema->string(),
                 ])->withoutAdditionalProperties()
             )->required(),
         ];

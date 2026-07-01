@@ -11,10 +11,11 @@ class ReviewIssue
         public readonly ReviewSeverity $severity,
         public readonly string $description,
         public readonly ?string $suggestion = null,
+        public readonly ?string $baseSuggestion = null,
     ) {}
 
     /**
-     * @return array{key: string, severity: string, description: string, suggestion: string|null}
+     * @return array{key: string, severity: string, description: string, suggestion: string|null, base_suggestion: string|null}
      */
     public function toArray(): array
     {
@@ -23,6 +24,7 @@ class ReviewIssue
             'severity' => $this->severity->value,
             'description' => $this->description,
             'suggestion' => $this->suggestion,
+            'base_suggestion' => $this->baseSuggestion,
         ];
     }
 }
