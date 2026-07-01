@@ -97,4 +97,12 @@ return [
     'locale' => [
         'invalid_code' => 'Invalid locale code [:code]. Expected a language code like "en", "pt-BR" or "zh-Hans".',
     ],
+
+    'enums' => [
+        'severity' => [
+            'error' => 'Error',
+            'warning' => 'Warning',
+            'info' => 'Info',
+        ],
+    ],
 ];

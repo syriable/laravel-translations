@@ -97,4 +97,12 @@ return [
     'locale' => [
         'invalid_code' => 'رمز لغة غير صالح [:code]. يُتوقع رمز لغة مثل "en" أو "pt-BR" أو "zh-Hans".',
     ],
+
+    'enums' => [
+        'severity' => [
+            'error' => 'خطأ',
+            'warning' => 'تحذير',
+            'info' => 'معلومة',
+        ],
+    ],
 ];

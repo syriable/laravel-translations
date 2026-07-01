@@ -97,4 +97,12 @@ return [
     'locale' => [
         'invalid_code' => 'غلط زبان کوڈ [:code]۔ متوقع زبان کوڈ جیسے "en"، "pt-BR" یا "zh-Hans"۔',
     ],
+
+    'enums' => [
+        'severity' => [
+            'error' => 'خرابی',
+            'warning' => 'انتباہ',
+            'info' => 'معلومات',
+        ],
+    ],
 ];

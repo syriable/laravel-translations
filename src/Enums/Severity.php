@@ -23,11 +23,7 @@ enum Severity: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match ($this) {
-            self::Error => 'Error',
-            self::Warning => 'Warning',
-            self::Info => 'Info',
-        };
+        return __('translations::messages.enums.severity.'.$this->value);
     }
 
     public function getColor(): string
