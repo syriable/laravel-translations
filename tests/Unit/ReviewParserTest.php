@@ -49,6 +49,41 @@ it('discards issues whose key was not part of the reviewed set', function (): vo
     expect($issues[0]->key)->toBe('real');
 });
 
+it('uses the model-provided base_suggestion and keeps suggestion as proposed', function (): void {
+    $issues = (new ReviewParser)->parse([
+        [
+            'key' => 'a',
+            'severity' => 'medium',
+            'description' => 'Too informal.',
+            'suggestion' => 'Use the formal register, e.g. "مرحباً".',
+            'base_suggestion' => 'مرحباً',
+        ],
+    ]);
+
+    expect($issues[0]->suggestion)->toBe('Use the formal register, e.g. "مرحباً".');
+    expect($issues[0]->baseSuggestion)->toBe('مرحباً');
+});
+
+it('extracts a clean base_suggestion from a framed suggestion when the model omits it', function (): void {
+    $suggestion = 'Change it to, for example: "يجب قبول حقل :attribute عندما يكون :other هو :value." and keep the placeholders.';
+
+    $issues = (new ReviewParser)->parse([
+        ['key' => 'a', 'severity' => 'high', 'description' => 'Placeholder issue.', 'suggestion' => $suggestion],
+    ]);
+
+    expect($issues[0]->suggestion)->toBe($suggestion);
+    expect($issues[0]->baseSuggestion)->toBe('يجب قبول حقل :attribute عندما يكون :other هو :value.');
+});
+
+it('leaves base_suggestion null when there is no suggestion', function (): void {
+    $issues = (new ReviewParser)->parse([
+        ['key' => 'a', 'severity' => 'low', 'description' => 'Minor nit.'],
+    ]);
+
+    expect($issues[0]->suggestion)->toBeNull();
+    expect($issues[0]->baseSuggestion)->toBeNull();
+});
+
 it('returns an empty array for non-array input', function (): void {
     expect((new ReviewParser)->parse(null))->toBe([]);
     expect((new ReviewParser)->parse('oops'))->toBe([]);
