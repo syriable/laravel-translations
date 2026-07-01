@@ -21,6 +21,17 @@ class ReviewFlow
         return MessageStatus::PendingReview;
     }
 
+    public function requestReview(Message $message, ?string $requestedBy = null): Message
+    {
+        return Message::withStamp('review_requested', $requestedBy, [], function () use ($message): Message {
+            $message->update([
+                'status' => MessageStatus::PendingReview,
+            ]);
+
+            return $message;
+        });
+    }
+
     public function approve(Message $message, ?string $reviewer = null): Message
     {
         return Message::withStamp('approval', $reviewer, [], function () use ($message, $reviewer): Message {

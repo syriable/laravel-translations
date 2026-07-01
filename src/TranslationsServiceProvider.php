@@ -17,10 +17,14 @@ use Syriable\Translations\Commands\TranslateCommand;
 use Syriable\Translations\Commands\ValidateCommand;
 use Syriable\Translations\Contracts\Reviewer;
 use Syriable\Translations\Contracts\Translator;
+use Syriable\Translations\Events\CommentPosted;
 use Syriable\Translations\Events\ImportFinished;
 use Syriable\Translations\Events\MessageSaved;
+use Syriable\Translations\Events\MessageStatusChanged;
 use Syriable\Translations\Listeners\FlushInsightsCache;
+use Syriable\Translations\Listeners\RecordCommentActivity;
 use Syriable\Translations\Listeners\RecordRevision;
+use Syriable\Translations\Listeners\RecordStatusActivity;
 use Syriable\Translations\Listeners\RunQualityChecks;
 use Syriable\Translations\Listeners\ScanUsageAfterImport;
 
@@ -95,6 +99,8 @@ class TranslationsServiceProvider extends ServiceProvider
         $this->app['events']->listen(MessageSaved::class, RecordRevision::class);
         $this->app['events']->listen(MessageSaved::class, RunQualityChecks::class);
         $this->app['events']->listen(MessageSaved::class, FlushInsightsCache::class);
+        $this->app['events']->listen(MessageStatusChanged::class, RecordStatusActivity::class);
+        $this->app['events']->listen(CommentPosted::class, RecordCommentActivity::class);
         $this->app['events']->listen(ImportFinished::class, ScanUsageAfterImport::class);
         $this->app['events']->listen(ImportFinished::class, FlushInsightsCache::class);
     }
