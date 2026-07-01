@@ -2,7 +2,7 @@
 
 use Syriable\Translations\Ai\FakeReviewer;
 use Syriable\Translations\Contracts\Reviewer;
-use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Enums\ReviewSeverity;
 use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\AiUsage;
 use Syriable\Translations\Models\Locale;
@@ -11,7 +11,7 @@ use Syriable\Translations\Support\ReviewRequest;
 
 beforeEach(function (): void {
     $this->fake = new FakeReviewer(fn (ReviewRequest $request) => [
-        new ReviewIssue('messages.greeting', Severity::Warning, 'Unnatural phrasing.', 'Use a warmer greeting.'),
+        new ReviewIssue('messages.greeting', ReviewSeverity::Medium, 'Unnatural phrasing.', 'Use a warmer greeting.'),
     ]);
     $this->app->instance(Reviewer::class, $this->fake);
 
@@ -33,8 +33,8 @@ it('reviews translated messages and reports issues, logging usage', function ():
 
     expect($result->hasIssues())->toBeTrue();
     expect($result->issues[0]->key)->toBe('messages.greeting');
-    expect($result->issues[0]->severity)->toBe(Severity::Warning);
-    expect($result->countsBySeverity())->toBe(['error' => 0, 'warning' => 1, 'info' => 0]);
+    expect($result->issues[0]->severity)->toBe(ReviewSeverity::Medium);
+    expect($result->countsBySeverity())->toBe(['high' => 0, 'medium' => 1, 'low' => 0]);
     expect(AiUsage::query()->where('success', true)->whereNull('phrase_id')->count())->toBe(1);
 });
 
@@ -108,10 +108,10 @@ it('runs the ai-review command and reports a clean result', function (): void {
     $this->artisan('translations:ai-review', ['locale' => 'es'])->assertSuccessful();
 });
 
-it('fails the ai-review command when a high-severity issue is found', function (): void {
+it('fails the ai-review command when a high-priority issue is found', function (): void {
     config()->set('translations.ai.enabled', true);
     $this->app->instance(Reviewer::class, new FakeReviewer(fn () => [
-        new ReviewIssue('messages.greeting', Severity::Error, 'Placeholder dropped.', null),
+        new ReviewIssue('messages.greeting', ReviewSeverity::High, 'Placeholder dropped.', null),
     ]));
 
     Translations::set('messages.greeting', 'Hello :name', 'en');

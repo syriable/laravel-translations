@@ -2,7 +2,7 @@
 
 namespace Syriable\Translations\Support;
 
-use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Enums\ReviewSeverity;
 
 class ReviewResult
 {
@@ -33,13 +33,13 @@ class ReviewResult
     }
 
     /**
-     * The number of issues per severity, e.g. ['error' => 1, 'warning' => 2, 'info' => 0].
+     * The number of issues per priority, e.g. ['high' => 1, 'medium' => 2, 'low' => 0].
      *
      * @return array<string, int>
      */
     public function countsBySeverity(): array
     {
-        $counts = ['error' => 0, 'warning' => 0, 'info' => 0];
+        $counts = ['high' => 0, 'medium' => 0, 'low' => 0];
 
         foreach ($this->issues as $issue) {
             $counts[$issue->severity->value]++;
@@ -69,9 +69,9 @@ class ReviewResult
     }
 
     /**
-     * The highest severity present, or null when there are no issues.
+     * The highest priority present, or null when there are no issues.
      */
-    public function topSeverity(): ?Severity
+    public function topSeverity(): ?ReviewSeverity
     {
         $top = null;
 

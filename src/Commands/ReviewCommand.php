@@ -58,11 +58,11 @@ class ReviewCommand extends Command
         $counts = $result->countsBySeverity();
         $this->components->info(__('translations::messages.ai_review.done', [
             'code' => $code,
-            'errors' => $counts['error'],
-            'warnings' => $counts['warning'],
-            'info' => $counts['info'],
+            'high' => $counts['high'],
+            'medium' => $counts['medium'],
+            'low' => $counts['low'],
         ]));
 
-        return $counts['error'] > 0 ? self::FAILURE : self::SUCCESS;
+        return $counts['high'] > 0 ? self::FAILURE : self::SUCCESS;
     }
 }

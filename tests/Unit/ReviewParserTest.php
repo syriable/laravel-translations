@@ -1,9 +1,9 @@
 <?php
 
 use Syriable\Translations\Ai\ReviewParser;
-use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Enums\ReviewSeverity;
 
-it('parses well-formed issues and maps the severity scale', function (): void {
+it('parses well-formed issues and resolves the priority', function (): void {
     $issues = (new ReviewParser)->parse([
         ['key' => 'a', 'severity' => 'high', 'description' => 'Breaks placeholder.', 'suggestion' => 'Keep :name.'],
         ['key' => 'b', 'severity' => 'medium', 'description' => 'Awkward wording.'],
@@ -11,20 +11,20 @@ it('parses well-formed issues and maps the severity scale', function (): void {
     ]);
 
     expect($issues)->toHaveCount(3);
-    expect($issues[0]->severity)->toBe(Severity::Error);
+    expect($issues[0]->severity)->toBe(ReviewSeverity::High);
     expect($issues[0]->suggestion)->toBe('Keep :name.');
-    expect($issues[1]->severity)->toBe(Severity::Warning);
+    expect($issues[1]->severity)->toBe(ReviewSeverity::Medium);
     expect($issues[1]->suggestion)->toBeNull();
-    expect($issues[2]->severity)->toBe(Severity::Info);
+    expect($issues[2]->severity)->toBe(ReviewSeverity::Low);
     expect($issues[2]->suggestion)->toBeNull();
 });
 
-it('defaults an unknown severity to a warning', function (): void {
+it('defaults an unknown priority to medium', function (): void {
     $issues = (new ReviewParser)->parse([
         ['key' => 'a', 'severity' => 'catastrophic', 'description' => 'Something.'],
     ]);
 
-    expect($issues[0]->severity)->toBe(Severity::Warning);
+    expect($issues[0]->severity)->toBe(ReviewSeverity::Medium);
 });
 
 it('drops issues without a key or description', function (): void {

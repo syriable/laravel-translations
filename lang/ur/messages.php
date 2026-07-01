@@ -71,7 +71,7 @@ return [
 
     'ai_review' => [
         'clean' => '[:code] میں کوئی کوالٹی مسئلہ نہیں ملا۔',
-        'done' => '[:code] کا جائزہ لیا گیا: :errors خرابیاں، :warnings انتباہات، :info تجاویز۔',
+        'done' => '[:code] کا جائزہ لیا گیا: :high زیادہ، :medium درمیانہ، :low کم ترجیحی مسائل۔',
         'table' => [
             'key' => 'کلید',
             'severity' => 'شدت',
@@ -103,6 +103,11 @@ return [
             'error' => 'خرابی',
             'warning' => 'انتباہ',
             'info' => 'معلومات',
+        ],
+        'review_severity' => [
+            'low' => 'کم',
+            'medium' => 'درمیانہ',
+            'high' => 'زیادہ',
         ],
     ],
 ];

@@ -2,13 +2,13 @@
 
 namespace Syriable\Translations\Support;
 
-use Syriable\Translations\Enums\Severity;
+use Syriable\Translations\Enums\ReviewSeverity;
 
 class ReviewIssue
 {
     public function __construct(
         public readonly string $key,
-        public readonly Severity $severity,
+        public readonly ReviewSeverity $severity,
         public readonly string $description,
         public readonly ?string $suggestion = null,
     ) {}
