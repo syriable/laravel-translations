@@ -55,6 +55,24 @@ it('records an activity when a comment is posted on a message', function (): voi
     expect($message->activities()->where('action', 'comment_added')->count())->toBe(1);
 });
 
+it('records the rejection note as a comment and on the status activity', function (): void {
+    $message = Translations::set('messages.greeting', 'Hola', 'es');
+
+    Translations::review()->reject($message, 'Too informal', 'reviewer-1');
+
+    $statusActivity = Activity::query()->where('action', 'status_changed')->latest('id')->first();
+    expect($statusActivity)->not->toBeNull();
+    expect($statusActivity->meta['note'])->toBe('Too informal');
+
+    $commentActivity = Activity::query()->where('action', 'comment_added')->latest('id')->first();
+    expect($commentActivity)->not->toBeNull();
+    expect($commentActivity->member_id)->toBe('reviewer-1');
+    expect($commentActivity->meta['body'])->toBe('Too informal');
+
+    expect($message->comments()->count())->toBe(1);
+    expect($message->comments()->first()->body)->toBe('Too informal');
+});
+
 it('does not record activities when disabled', function (): void {
     config()->set('translations.activities.enabled', false);
 
