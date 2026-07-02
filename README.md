@@ -468,12 +468,20 @@ use Syriable\Translations\Enums\MemberRole;
 $review->statusForSave(MemberRole::Translator);   // MessageStatus::PendingReview
 $review->statusForSave(MemberRole::Reviewer);     // MessageStatus::Approved
 
-$review->approve($message, 'lead-reviewer');
-$review->reject($message, 'Too informal', 'lead-reviewer');
+$review->approve($message, $member->id);
+$review->reject($message, 'Too informal', $member->id);
+$review->requestReview($message, $member->id);
 ```
 
 > The actor string is **advisory** — it's recorded, not enforced. Authorization is your application's
 > job; gate access with `MemberRole` or your own policies. See [Security](#security).
+>
+> Pass a `Member` **ulid**, not your host app's own user id — the activity log's `member()` relation
+> (see [Activity log](#activity-log)) resolves against `tx_members.id`. Use `Member::current()` to look
+> up the member matching the authenticated app user (matched by email) instead of `auth()->id()`.
+
+Rejecting also records the note as a comment (see below), so it shows up in the activity feed alongside
+the status change.
 
 ### Analytics
 
@@ -506,12 +514,35 @@ commands, or set `scanning.scan_after_import` to queue a usage scan after every 
 
 ### Activity log
 
-A small recorder for auditing arbitrary member actions:
+Status changes, review requests, and comments on a message are recorded automatically into `tx_activities`
+(toggle with `activities.enabled`):
+
+```php
+$message->activities;                                  // Collection<Activity>, newest last
+$message->activities()->latest('id')->get();
+
+$activity->action;      // 'status_changed' | 'review_requested' | 'comment_added'
+$activity->member_id;   // whoever performed the action
+$activity->member;      // BelongsTo Member (resolves if member_id is a Member ulid)
+$activity->meta;        // action-specific payload, e.g. ['from' => 'draft', 'to' => 'approved']
+```
+
+Comments (e.g. reviewer feedback) live in their own `tx_comments` table and thread per message:
+
+```php
+$message->comment('Please double check this wording', $member->id);
+$message->comments;   // Collection<Comment>
+```
+
+`ReviewFlow::reject()` posts its `$note` as a comment automatically, so rejection feedback shows up both
+as a `comment_added` activity and in `$message->comments()`.
+
+`ActivityRecorder` is also available directly for auditing arbitrary, non-message actions:
 
 ```php
 use Syriable\Translations\Support\ActivityRecorder;
 
-app(ActivityRecorder::class)->log('glossary.updated', $term, ['field' => 'value'], memberId: 'maria');
+app(ActivityRecorder::class)->log('glossary.updated', $term, ['field' => 'value'], memberId: $member->id);
 ```
 
 ---
@@ -660,12 +691,15 @@ Hook into the translation lifecycle with standard Laravel listeners:
 | Event | Fired when | Payload |
 | --- | --- | --- |
 | `MessageSaved` | a message's value changes | `$message`, `$oldValue`, `$reason`, `$changedBy`, `$meta` |
+| `MessageStatusChanged` | a message's status changes | `$message`, `$oldStatus`, `$newStatus`, `$reason`, `$changedBy`, `$meta` |
+| `CommentPosted` | a comment is created via `Message::comment()` | `$comment` |
 | `ImportFinished` | an import completes | `$summary` (`ImportSummary`) |
 | `ExportFinished` | an export completes | `$summary` (`ExportSummary`) |
 | `PhraseCreated` | a new phrase is created via the API | `$phrase` |
 | `LocaleAdded` | a new locale is added | `$locale` |
 
 Internally, `MessageSaved` drives `RecordRevision`, `RunQualityChecks` and `FlushInsightsCache`;
+`MessageStatusChanged` drives `RecordStatusActivity`; `CommentPosted` drives `RecordCommentActivity`;
 `ImportFinished` drives `ScanUsageAfterImport` (when enabled) and a cache flush.
 
 ---
@@ -679,12 +713,14 @@ All models live in `Syriable\Translations\Models` and use the configured table p
 | `Locale` | `messages()`, `members()`; scopes `enabled()`, `targets()`; static `source()`, `flushSourceCache()` |
 | `Bundle` | `phrases()`; `isJson()`, `label()`; scope `withTranslationProgress()`, `translationProgressPercent()` |
 | `Phrase` | `bundle()`, `messages()`, `usages()`; `dottedKey()`; scope `missingIn(int $localeId)` |
-| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`; scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()` |
-| `Member` | `locales()`; `role` cast to `MemberRole` |
+| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`, `comments()`, `activities()`; scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()`; `comment(string, ?string, array)` |
+| `Member` | `locales()`; `role` cast to `MemberRole`; static `current()` — resolves the `Member` matching the authenticated app user by email |
 | `Revision` | `message()`; scopes `forLocale(int)`, `between(?string, ?string)` |
 | `QualityIssue` | `message()`, `locale()`; `severity` cast to `Severity` |
 | `Term` / `TermDefinition` | `definitions()` / `term()`, `locale()`; `definitionFor(int $localeId)` |
-| `AiUsage`, `Activity`, `PhraseUsage`, `LooseString`, `IgnoredString`, `ImportRecord`, `ExportRecord` | audit / support records |
+| `Activity` | `subject()` (morph), `member()`; `action`, `meta` (array) |
+| `Comment` | `message()`, `member()`; `body`, `meta` (array) |
+| `AiUsage`, `PhraseUsage`, `LooseString`, `IgnoredString`, `ImportRecord`, `ExportRecord` | audit / support records |
 
 ---
 
