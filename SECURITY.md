@@ -35,7 +35,9 @@ worth understanding before you wire it into an application:
 - **AI translation output is untrusted.** Prompts fence untrusted context (glossary, notes, usages)
   so it can't act as instructions, but the model's *output* is still untrusted text. Escape it on
   render in the consuming application; if rendered as HTML, treat it as any other user-supplied HTML.
-- **Authorization is your responsibility.** The package has no auth layer. Review and approval actions
-  accept a free-form actor string that is advisory only — it is recorded, not enforced. Enforce who
-  may translate, review or manage in your application using `MemberRole` (which exposes
-  `canTranslate()`, `canReview()`, `canManage()`) or your own gates/policies.
+- **Authorization is your responsibility.** The package has no auth layer and owns no member/user table
+  — `member_model` (default: your app's own user model) identifies the actor, but review and approval
+  actions accept a free-form actor string that is advisory only — it is recorded, not enforced. Enforce
+  who may translate, review or manage in your application using `MemberRole` (which exposes
+  `canTranslate()`, `canReview()`, `canManage()`), the shipped `MessagePolicy` stub, or your own
+  gates/policies.

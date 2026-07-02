@@ -47,6 +47,13 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
 
 ### Changed
 
+- **Removed the `Member` model, `members` table and `member_locale` foreign key.** The package no
+  longer owns an actor table. Add `Contracts\HasTranslationRole` to whichever model represents your
+  translators (your own `App\Models\User` by default, configurable via `translations.member_model` /
+  `TRANSLATIONS_MEMBER_MODEL`) to resolve a `MemberRole` for permission checks. `Locale::members()`,
+  `Activity::member()` and `Comment::member()` now relate to the configured `member_model` instead of
+  the removed `Member` class, and `member_locale.member_id` is a plain indexed string column (no FK).
+  A `Policies\MessagePolicy` stub is included but not auto-registered.
 - Bundle coverage analytics (`Insights::bundleCoverage()`, `Bundle::withTranslationProgress()`,
   `translations:status --bundles`).
 - `Insights::coverage()` now uses a single grouped aggregate instead of three count queries per locale.

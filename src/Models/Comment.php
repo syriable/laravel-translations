@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $body
  * @property array|null $meta
  * @property-read Message $message
- * @property-read Member|null $member
+ * @property-read \Illuminate\Database\Eloquent\Model|null $member
  */
 class Comment extends TranslationModel
 {
@@ -33,6 +33,6 @@ class Comment extends TranslationModel
 
     public function member(): BelongsTo
     {
-        return $this->belongsTo(Member::class, 'member_id', 'id');
+        return $this->belongsTo(config('translations.member_model'), 'member_id');
     }
 }

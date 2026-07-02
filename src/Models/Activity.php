@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string|null $subject_type
  * @property string|null $subject_id
  * @property array|null $meta
- * @property-read Member|null $member
+ * @property-read \Illuminate\Database\Eloquent\Model|null $member
  * @property-read \Illuminate\Database\Eloquent\Model|null $subject
  */
 class Activity extends TranslationModel
@@ -37,6 +37,6 @@ class Activity extends TranslationModel
 
     public function member(): BelongsTo
     {
-        return $this->belongsTo(Member::class, 'member_id', 'id');
+        return $this->belongsTo(config('translations.member_model'), 'member_id');
     }
 }

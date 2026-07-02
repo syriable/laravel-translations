@@ -72,19 +72,9 @@ return new class extends Migration
             $table->unique(['phrase_id', 'locale_id']);
         });
 
-        Schema::create($prefix.'members', function (Blueprint $table): void {
-            $table->ulid('id')->primary();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('role')->default('translator');
-            $table->boolean('enabled')->default(true);
-            $table->timestamp('last_seen_at')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create($prefix.'member_locale', function (Blueprint $table) use ($prefix): void {
             $table->id();
-            $table->foreignUlid('member_id')->constrained($prefix.'members')->cascadeOnDelete();
+            $table->string('member_id')->index();
             $table->foreignId('locale_id')->constrained($prefix.'locales')->cascadeOnDelete();
 
             $table->unique(['member_id', 'locale_id']);
@@ -119,7 +109,7 @@ return new class extends Migration
     {
         $prefix = $this->prefix();
 
-        foreach (['export_records', 'import_records', 'member_locale', 'members', 'messages', 'phrases', 'bundles', 'locales'] as $table) {
+        foreach (['export_records', 'import_records', 'member_locale', 'messages', 'phrases', 'bundles', 'locales'] as $table) {
             Schema::dropIfExists($prefix.$table);
         }
     }
