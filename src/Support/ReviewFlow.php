@@ -47,12 +47,14 @@ class ReviewFlow
 
     public function reject(Message $message, string $note, ?string $reviewer = null): Message
     {
-        return Message::withStamp('rejection', $reviewer, [], function () use ($message, $note, $reviewer): Message {
+        return Message::withStamp('rejection', $reviewer, ['note' => $note], function () use ($message, $note, $reviewer): Message {
             $message->update([
                 'status' => MessageStatus::PendingReview,
                 'reviewed_by' => $reviewer,
                 'review_note' => $note,
             ]);
+
+            $message->comment($note, $reviewer, ['type' => 'rejection']);
 
             return $message;
         });
