@@ -59,7 +59,12 @@ class Locale extends TranslationModel
 
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(Member::class, config('translations.database.prefix', 'tx_').'member_locale');
+        return $this->belongsToMany(
+            config('translations.member_model'),
+            config('translations.database.prefix', 'tx_').'member_locale',
+            'locale_id',
+            'member_id',
+        );
     }
 
     public function scopeEnabled(Builder $query): Builder

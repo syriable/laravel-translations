@@ -473,7 +473,10 @@ $review->reject($message, 'Too informal', 'lead-reviewer');
 ```
 
 > The actor string is **advisory** — it's recorded, not enforced. Authorization is your application's
-> job; gate access with `MemberRole` or your own policies. See [Security](#security).
+> job. `MemberRole` is a plain value object; if your `member_model` implements
+> `Syriable\Translations\Contracts\HasTranslationRole`, the package ships a `MessagePolicy` stub you can
+> register yourself (`Gate::policy(Message::class, MessagePolicy::class)`), or write your own. See
+> [Security](#security).
 
 ### Analytics
 
@@ -590,6 +593,10 @@ return [
         'prefix'     => env('TRANSLATIONS_DB_PREFIX', 'tx_'),
     ],
 
+    // The model that represents whoever translates/reviews/manages. Defaults
+    // to your app's own user model. The package doesn't own a table for it.
+    'member_model' => env('TRANSLATIONS_MEMBER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
+
     'import' => [
         'scan_vendor'         => true,   // import vendor/<ns>/<locale>/*.php
         'detect_placeholders' => true,   // extract :name and {count}
@@ -676,11 +683,10 @@ All models live in `Syriable\Translations\Models` and use the configured table p
 
 | Model | Notable relations / methods |
 | --- | --- |
-| `Locale` | `messages()`, `members()`; scopes `enabled()`, `targets()`; static `source()`, `flushSourceCache()` |
+| `Locale` | `messages()`, `members()` (belongs-to-many against your configured `member_model`); scopes `enabled()`, `targets()`; static `source()`, `flushSourceCache()` |
 | `Bundle` | `phrases()`; `isJson()`, `label()`; scope `withTranslationProgress()`, `translationProgressPercent()` |
 | `Phrase` | `bundle()`, `messages()`, `usages()`; `dottedKey()`; scope `missingIn(int $localeId)` |
 | `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`; scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()` |
-| `Member` | `locales()`; `role` cast to `MemberRole` |
 | `Revision` | `message()`; scopes `forLocale(int)`, `between(?string, ?string)` |
 | `QualityIssue` | `message()`, `locale()`; `severity` cast to `Severity` |
 | `Term` / `TermDefinition` | `definitions()` / `term()`, `locale()`; `definitionFor(int $localeId)` |
@@ -693,7 +699,7 @@ All models live in `Syriable\Translations\Models` and use the configured table p
 In `Syriable\Translations\Enums`:
 
 - **`MessageStatus`** — `Open`, `Draft`, `PendingReview`, `Approved`. Methods: `label()`, `isTranslated()`.
-- **`MemberRole`** — `Owner`, `Admin`, `Reviewer`, `Translator`, `Viewer`. Methods: `level()`, `isAtLeast()`, `canTranslate()`, `canReview()`, `canManage()`.
+- **`MemberRole`** — `Owner`, `Admin`, `Reviewer`, `Translator`, `Viewer`. Methods: `level()`, `isAtLeast()`, `canTranslate()`, `canReview()`, `canManage()`. Not tied to any model; resolve it for your `member_model` by implementing `Contracts\HasTranslationRole`.
 - **`RevisionReason`** — `Manual`, `Import`, `Ai`, `Rollback`, `Bulk`. Method: `label()`.
 - **`Severity`** — `Error`, `Warning`, `Info` (deterministic quality checks). Method: `order()`.
 - **`ReviewSeverity`** — `Low`, `Medium`, `High` (AI quality-review priority). Methods: `order()`, `fromModel()`.

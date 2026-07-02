@@ -55,6 +55,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Member model
+    |--------------------------------------------------------------------------
+    |
+    | The Eloquent model that represents whoever is translating, reviewing or
+    | managing translations in your application. Defaults to your app's own
+    | user model, but can be swapped for any model. The package never owns a
+    | table for it - it only stores the model's key as a plain string (e.g.
+    | on activities, comments and the locale-assignment pivot) and, if the
+    | model implements Syriable\Translations\Contracts\HasTranslationRole,
+    | uses it to resolve a MemberRole for permission checks.
+    |
+    */
+
+    'member_model' => env('TRANSLATIONS_MEMBER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Import
     |--------------------------------------------------------------------------
     */
