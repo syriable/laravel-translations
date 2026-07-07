@@ -67,4 +67,19 @@ class LocaleMeta
 
         return array_map(fn ($locale) => $locale['name'], $locales);
     }
+
+    public static function getNameByCode(string $code): string
+    {
+        return self::for($code)['name'];
+    }
+
+    public static function getNativeNameByCode(string $code): string
+    {
+        return self::for($code)['native_name'];
+    }
+
+    public static function getDirectionByCode(string $code): string
+    {
+        return self::for($code)['direction'];
+    }
 }
