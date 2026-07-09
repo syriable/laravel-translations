@@ -72,6 +72,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Actor resolution
+    |--------------------------------------------------------------------------
+    |
+    | Whenever a message is saved without an explicit "by" (who made the
+    | change), the package asks Syriable\Translations\Contracts\ResolvesActor
+    | to identify the actor instead - by default that's whoever is currently
+    | authenticated on `auth_guard` (null uses your app's default guard).
+    | This runs for manual edits, AI-triggered edits, reviews and rollbacks
+    | alike, so `changed_by` / `translated_by` / `reviewed_by` get filled in
+    | automatically. `system_actor` is what gets recorded when nobody is
+    | authenticated (e.g. a queued job or console command) - left null by
+    | default so unattended runs stay honestly unattributed. Bind your own
+    | ResolvesActor implementation in the container to customize this (e.g.
+    | to tag queue jobs with a service-account id).
+    |
+    */
+
+    'auth_guard' => env('TRANSLATIONS_AUTH_GUARD'),
+
+    'system_actor' => env('TRANSLATIONS_SYSTEM_ACTOR'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Import
     |--------------------------------------------------------------------------
     */

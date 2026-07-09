@@ -321,6 +321,7 @@ $quality->scan($localeId);            // limit to one locale
 $quality->inspect($message);          // array<Issue>, without persisting
 $quality->inspectAndStore($message);  // persist QualityIssue rows for one message
 $quality->fix($qualityIssue);         // auto-fix a fixable issue (whitespace, casing); returns bool
+$quality->fix($qualityIssue, 'qa-bot'); // optional `by`; falls back to ResolvesActor like every other write
 ```
 
 | Check | Severity | Auto-fix |
@@ -456,6 +457,33 @@ $revisions->afterDate('2026-06-01', localeId: $es->id);  // undo changes after a
 
 Prune old history with `php artisan translations:prune-revisions` (keeps the latest per message).
 
+#### Who made the change
+
+`Revision::member()`, `Message::translator()` and `Message::reviewer()` are `belongsTo` relations
+against your configured `member_model` — resolving `$revision->member`/`$message->translator` needs
+no manual lookup:
+
+```php
+$revision->changed_by;   // '42' - the raw stored id
+$revision->member;       // App\Models\User { id: 42, ... } - via belongsTo
+```
+
+You don't need to pass `by` explicitly for this to work. Every write path (`set()`, AI translation,
+review approve/reject, rollback) accepts an optional `by` in its `$options`/args, but when it's
+omitted the package asks `Syriable\Translations\Contracts\ResolvesActor` to identify the actor
+instead. The default implementation reads the currently authenticated user off `auth_guard` (null
+= your app's default guard) — so `changed_by` / `translated_by` / `reviewed_by` are filled in
+automatically, including **who triggered an AI translation** (the human who clicked "translate",
+not the AI itself — that's already tracked separately via `reason: RevisionReason::Ai` and
+`Message::ai_provider`). When nobody is authenticated (a console command, queue job, or script),
+the resolver falls back to `system_actor` (`null` by default, so unattended runs stay honestly
+unattributed rather than impersonating a user). Bind your own `ResolvesActor` in the container to
+customize resolution — e.g. to tag queue jobs with a service-account id:
+
+```php
+$this->app->bind(ResolvesActor::class, MyQueueAwareActorResolver::class);
+```
+
 ### Review workflow
 
 When `review.enabled` is on, non-reviewer saves land in `pending_review` instead of `approved`.
@@ -552,7 +580,7 @@ The sub-services:
 | --- | --- |
 | `MachineTranslation` | `suggest(Phrase, Locale, array)`, `apply(Phrase, Locale, array)`, `translateOpen(Locale, array): int`, `estimate(array $phraseIds, string $locale): array` |
 | `MachineReview` | `review(Locale, array): ReviewResult` |
-| `Inspector` | `inspect(Message): array`, `inspectAndStore(Message): array`, `scan(?int $localeId): array`, `fix(QualityIssue): bool` |
+| `Inspector` | `inspect(Message): array`, `inspectAndStore(Message): array`, `scan(?int $localeId): array`, `fix(QualityIssue, ?string $by = null): bool` |
 | `Glossary` | `define(string, ?string, bool, bool, ?string): Term`, `translate(Term, int, string, ?string): TermDefinition`, `forget(Term)`, `matching(string, int): Collection`, `pairsFor(string, int): array` |
 | `RevisionRollback` | `toRevision(Revision, ?string): Message`, `byMember(string, ?string $from, ?string $to, ?string $by): array`, `afterDate(string, ?int $localeId, ?string $by): array` |
 | `Insights` | `dashboard()`, `coverage()`, `bundleCoverage(?string)`, `overallCoverage(): float`, `leaderboard()`, `velocity(int $days = 30)`, `stale(?int)`, `staleCounts()`, `flush()` |
@@ -596,6 +624,12 @@ return [
     // The model that represents whoever translates/reviews/manages. Defaults
     // to your app's own user model. The package doesn't own a table for it.
     'member_model' => env('TRANSLATIONS_MEMBER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
+
+    // Auto-resolving "who did this" when a write omits `by` (see Contracts\ResolvesActor).
+    // auth_guard: null uses your app's default guard. system_actor: recorded when nobody's
+    // authenticated (console/queue); null keeps unattended runs unattributed.
+    'auth_guard' => env('TRANSLATIONS_AUTH_GUARD'),
+    'system_actor' => env('TRANSLATIONS_SYSTEM_ACTOR'),
 
     'import' => [
         'scan_vendor'         => true,   // import vendor/<ns>/<locale>/*.php
@@ -686,8 +720,8 @@ All models live in `Syriable\Translations\Models` and use the configured table p
 | `Locale` | `messages()`, `members()` (belongs-to-many against your configured `member_model`); scopes `enabled()`, `targets()`; static `source()`, `flushSourceCache()` |
 | `Bundle` | `phrases()`; `isJson()`, `label()`; scope `withTranslationProgress()`, `translationProgressPercent()` |
 | `Phrase` | `bundle()`, `messages()`, `usages()`; `dottedKey()`; scope `missingIn(int $localeId)` |
-| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`; scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()` |
-| `Revision` | `message()`; scopes `forLocale(int)`, `between(?string, ?string)` |
+| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`, `translator()`, `reviewer()` (belongs-to against `member_model`); scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()`, `resolveActor()` |
+| `Revision` | `message()`, `member()` (belongs-to against `member_model`); scopes `forLocale(int)`, `between(?string, ?string)` |
 | `QualityIssue` | `message()`, `locale()`; `severity` cast to `Severity` |
 | `Term` / `TermDefinition` | `definitions()` / `term()`, `locale()`; `definitionFor(int $localeId)` |
 | `AiUsage`, `Activity`, `PhraseUsage`, `LooseString`, `IgnoredString`, `ImportRecord`, `ExportRecord` | audit / support records |
@@ -700,7 +734,7 @@ In `Syriable\Translations\Enums`:
 
 - **`MessageStatus`** — `Open`, `Draft`, `PendingReview`, `Approved`. Methods: `label()`, `isTranslated()`.
 - **`MemberRole`** — `Owner`, `Admin`, `Reviewer`, `Translator`, `Viewer`. Methods: `level()`, `isAtLeast()`, `canTranslate()`, `canReview()`, `canManage()`. Not tied to any model; resolve it for your `member_model` by implementing `Contracts\HasTranslationRole`.
-- **`RevisionReason`** — `Manual`, `Import`, `Ai`, `Rollback`, `Bulk`. Method: `label()`.
+- **`RevisionReason`** — `Manual`, `Import`, `Ai`, `Rollback`, `Bulk`, `QualityFix`. Method: `label()`.
 - **`Severity`** — `Error`, `Warning`, `Info` (deterministic quality checks). Method: `order()`.
 - **`ReviewSeverity`** — `Low`, `Medium`, `High` (AI quality-review priority). Methods: `order()`, `fromModel()`.
 - **`LooseStringStatus`** — `Pending`, `Converted`, `Ignored`, `Resolved`.

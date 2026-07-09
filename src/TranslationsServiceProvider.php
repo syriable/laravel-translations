@@ -15,6 +15,7 @@ use Syriable\Translations\Commands\ScanUsageCommand;
 use Syriable\Translations\Commands\StatusCommand;
 use Syriable\Translations\Commands\TranslateCommand;
 use Syriable\Translations\Commands\ValidateCommand;
+use Syriable\Translations\Contracts\ResolvesActor;
 use Syriable\Translations\Contracts\Reviewer;
 use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Events\CommentPosted;
@@ -27,6 +28,7 @@ use Syriable\Translations\Listeners\RecordRevision;
 use Syriable\Translations\Listeners\RecordStatusActivity;
 use Syriable\Translations\Listeners\RunQualityChecks;
 use Syriable\Translations\Listeners\ScanUsageAfterImport;
+use Syriable\Translations\Support\AuthActorResolver;
 
 class TranslationsServiceProvider extends ServiceProvider
 {
@@ -36,6 +38,7 @@ class TranslationsServiceProvider extends ServiceProvider
 
         $this->app->bind(Translator::class, AiTranslator::class);
         $this->app->bind(Reviewer::class, AiReviewer::class);
+        $this->app->bind(ResolvesActor::class, AuthActorResolver::class);
 
         $this->app->singleton(TranslationManager::class);
     }

@@ -9,9 +9,13 @@ enum RevisionReason: string
     case Ai = 'ai';
     case Rollback = 'rollback';
     case Bulk = 'bulk';
+    case QualityFix = 'quality_fix';
 
     public function label(): string
     {
-        return ucfirst($this->value);
+        return match ($this) {
+            self::QualityFix => 'Quality fix',
+            default => ucfirst($this->value),
+        };
     }
 }

@@ -67,11 +67,11 @@ class TranslationManager
                 'locale_id' => $localeModel->id,
             ]);
 
-            return Message::withStamp($options['reason'] ?? 'manual', $options['by'] ?? null, $options['meta'] ?? [], function () use ($message, $value, $options): Message {
+            return Message::withStamp($options['reason'] ?? 'manual', $options['by'] ?? null, $options['meta'] ?? [], function (?string $resolvedBy) use ($message, $value, $options): Message {
                 $message->fill([
                     'value' => $value,
                     'status' => $options['status'] ?? MessageStatus::Draft,
-                    'translated_by' => $options['by'] ?? $message->translated_by,
+                    'translated_by' => $resolvedBy ?? $message->translated_by,
                 ])->save();
 
                 return $message;

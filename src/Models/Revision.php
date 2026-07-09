@@ -25,6 +25,11 @@ class Revision extends TranslationModel
         return $this->belongsTo(Message::class);
     }
 
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(config('translations.member_model'), 'changed_by');
+    }
+
     public function scopeForLocale(Builder $query, int $localeId): Builder
     {
         return $query->whereHas('message', fn (Builder $sub) => $sub->where('locale_id', $localeId));
