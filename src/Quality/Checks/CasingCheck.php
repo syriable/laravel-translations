@@ -25,6 +25,10 @@ class CasingCheck extends Check
             return null;
         }
 
+        if (! $this->firstLetterHasCase($source->value) || ! $this->firstLetterHasCase($message->value)) {
+            return null;
+        }
+
         if ($this->firstLetterUpper($source->value) === $this->firstLetterUpper($message->value)) {
             return null;
         }
@@ -62,5 +66,21 @@ class CasingCheck extends Check
         }
 
         return mb_strtoupper($first) === $first;
+    }
+
+    /**
+     * Scripts without upper/lower case (Arabic, Hebrew, CJK, ...) always read as
+     * "uppercase" under mb_strtoupper($first) === $first, since case-folding is a
+     * no-op - so the comparison must be skipped rather than treated as a match.
+     */
+    private function firstLetterHasCase(string $value): bool
+    {
+        $first = mb_substr(ltrim($value), 0, 1);
+
+        if ($first === '' || ! preg_match('/\p{L}/u', $first)) {
+            return false;
+        }
+
+        return mb_strtoupper($first) !== mb_strtolower($first);
     }
 }

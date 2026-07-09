@@ -29,6 +29,13 @@ it('flags an html tag mismatch', function (): void {
     expect(QualityIssue::query()->where('check', 'html_tag_mismatch')->exists())->toBeTrue();
 });
 
+it('does not flag a casing mismatch against a script with no letter case', function (): void {
+    Translations::set('messages.welcome', 'welcome back', 'en');
+    Translations::set('messages.welcome', 'مرحبا بعودتك', 'ar');
+
+    expect(QualityIssue::query()->where('check', 'casing')->exists())->toBeFalse();
+});
+
 it('auto-fixes whitespace and casing issues', function (): void {
     config()->set('translations.quality.run_on_save', false);
 
