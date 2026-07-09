@@ -71,6 +71,10 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
 
 ### Fixed
 
+- `CasingCheck` no longer flags a false casing mismatch when the source or target's first letter
+  belongs to a script without letter case (Arabic, Hebrew, CJK, ...). `mb_strtoupper()` is a no-op
+  on such letters, so the previous logic always read them as "uppercase" and compared that against
+  the Latin-script source, flagging spurious warnings whenever the source started lowercase.
 - Imports run inside a database transaction and suppress per-row model events, so bulk/`--fresh`
   imports no longer write a revision per string or run inline quality on every row — and a failed
   `--fresh` import rolls back instead of leaving the catalog empty.
