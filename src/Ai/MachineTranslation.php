@@ -57,12 +57,13 @@ class MachineTranslation
             'locale_id' => $target->id,
         ]);
 
-        return Message::withStamp(RevisionReason::Ai->value, $options['by'] ?? null, [], function () use ($message, $best, $result): Message {
+        return Message::withStamp(RevisionReason::Ai->value, $options['by'] ?? null, [], function (?string $resolvedBy) use ($message, $best, $result): Message {
             $message->fill([
                 'value' => $best,
                 'status' => MessageStatus::Draft,
                 'ai_generated' => true,
                 'ai_provider' => $result->provider,
+                'translated_by' => $resolvedBy ?? $message->translated_by,
             ])->save();
 
             return $message;

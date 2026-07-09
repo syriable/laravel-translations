@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use Syriable\Translations\Contracts\ResolvesActor;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Events\CommentPosted;
 use Syriable\Translations\Events\MessageSaved;
@@ -93,6 +94,16 @@ class Message extends TranslationModel
         return $this->belongsTo(Locale::class);
     }
 
+    public function translator(): BelongsTo
+    {
+        return $this->belongsTo(config('translations.member_model'), 'translated_by');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(config('translations.member_model'), 'reviewed_by');
+    }
+
     public function revisions(): HasMany
     {
         return $this->hasMany(Revision::class);
@@ -131,7 +142,7 @@ class Message extends TranslationModel
     public static function stamp(?string $reason, ?string $changedBy = null, array $meta = []): void
     {
         static::$stampReason = $reason;
-        static::$stampChangedBy = $changedBy;
+        static::$stampChangedBy = $changedBy ?? static::resolveActor();
         static::$stampMeta = $meta;
     }
 
@@ -142,12 +153,25 @@ class Message extends TranslationModel
         static::$stampMeta = [];
     }
 
+    /**
+     * Identify whoever is behind the current action when no explicit actor
+     * was passed in - e.g. the authenticated user who clicked "translate
+     * with AI", not the AI itself. See Contracts\ResolvesActor.
+     */
+    public static function resolveActor(): ?string
+    {
+        return app(ResolvesActor::class)->resolve();
+    }
+
+    /**
+     * @param  Closure(?string $resolvedBy): mixed  $callback
+     */
     public static function withStamp(?string $reason, ?string $changedBy, array $meta, Closure $callback): mixed
     {
         static::stamp($reason, $changedBy, $meta);
 
         try {
-            return $callback();
+            return $callback(static::$stampChangedBy);
         } finally {
             static::clearStamp();
         }

@@ -36,6 +36,15 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
   scale and carrying a clean, copy-ready `baseSuggestion` when the reviewer proposes a corrected
   translation, with per-batch usage logging; untrusted text is fenced and hallucinated keys are dropped.
 - **Revision history** with single rollback and bulk rollback by author or date.
+- **Automatic actor resolution.** `Revision::member()`, `Message::translator()` and
+  `Message::reviewer()` are `belongsTo` relations against the configured `member_model`, so the user
+  behind a change is available without a manual lookup. Every write path (`set()`, AI translation,
+  review approve/reject, quality auto-fix, rollback) now resolves `changed_by` / `translated_by` /
+  `reviewed_by` from `Contracts\ResolvesActor` whenever an explicit `by` isn't given — including who
+  *triggered* an AI translation, not the AI itself. Ships with an `Auth`-guard-backed default
+  (`auth_guard` / `system_actor` config), swappable by rebinding the contract. Quality auto-fixes
+  (`Inspector::fix()`) now go through the same stamping pipeline and record a revision under the new
+  `RevisionReason::QualityFix`, instead of silently bypassing revision history.
 - **Glossary** of per-locale approved terminology feeding AI prompts and the glossary check.
 - **Analytics.** Per-locale and per-bundle coverage, velocity, stale detection and contributor
   leaderboards, behind a cache.

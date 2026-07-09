@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Quality;
 
 use Syriable\Translations\Contracts\QualityCheck;
+use Syriable\Translations\Enums\RevisionReason;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Models\QualityIssue;
@@ -86,7 +87,7 @@ class Inspector
         return $stats;
     }
 
-    public function fix(QualityIssue $issue): bool
+    public function fix(QualityIssue $issue, ?string $by = null): bool
     {
         if (! $issue->fixable) {
             return false;
@@ -111,7 +112,10 @@ class Inspector
             return false;
         }
 
-        $message->update(['value' => $fixed]);
+        Message::withStamp(RevisionReason::QualityFix->value, $by, ['check' => $issue->check], function () use ($message, $fixed): void {
+            $message->update(['value' => $fixed]);
+        });
+
         $issue->delete();
 
         return true;

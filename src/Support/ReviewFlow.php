@@ -34,10 +34,10 @@ class ReviewFlow
 
     public function approve(Message $message, ?string $reviewer = null): Message
     {
-        return Message::withStamp('approval', $reviewer, [], function () use ($message, $reviewer): Message {
+        return Message::withStamp('approval', $reviewer, [], function (?string $resolvedBy) use ($message): Message {
             $message->update([
                 'status' => MessageStatus::Approved,
-                'reviewed_by' => $reviewer,
+                'reviewed_by' => $resolvedBy,
                 'review_note' => null,
             ]);
 
@@ -47,14 +47,14 @@ class ReviewFlow
 
     public function reject(Message $message, string $note, ?string $reviewer = null): Message
     {
-        return Message::withStamp('rejection', $reviewer, ['note' => $note], function () use ($message, $note, $reviewer): Message {
+        return Message::withStamp('rejection', $reviewer, ['note' => $note], function (?string $resolvedBy) use ($message, $note): Message {
             $message->update([
                 'status' => MessageStatus::PendingReview,
-                'reviewed_by' => $reviewer,
+                'reviewed_by' => $resolvedBy,
                 'review_note' => $note,
             ]);
 
-            $message->comment($note, $reviewer, ['type' => 'rejection']);
+            $message->comment($note, $resolvedBy, ['type' => 'rejection']);
 
             return $message;
         });
