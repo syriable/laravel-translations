@@ -4,6 +4,7 @@ namespace Syriable\Translations\Ai;
 
 use Closure;
 use Syriable\Translations\Contracts\Reviewer;
+use Syriable\Translations\Support\ReviewIssue;
 use Syriable\Translations\Support\ReviewRequest;
 use Syriable\Translations\Support\ReviewResult;
 
@@ -13,7 +14,7 @@ class FakeReviewer implements Reviewer
     public array $requests = [];
 
     /**
-     * @param  (Closure(ReviewRequest): array<int, \Syriable\Translations\Support\ReviewIssue>)|null  $using
+     * @param  (Closure(ReviewRequest): array<int, ReviewIssue>)|null  $using
      */
     public function __construct(
         private readonly ?Closure $using = null,

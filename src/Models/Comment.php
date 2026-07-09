@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $body
  * @property array|null $meta
  * @property-read Message $message
- * @property-read \Illuminate\Database\Eloquent\Model|null $member
+ * @property-read Model|null $member
  */
 class Comment extends TranslationModel
 {

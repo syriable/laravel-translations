@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+
 it('defaults member_model to the app User model class', function (): void {
     // Isolate this assertion from whatever `auth.providers.users.model` happens to
     // resolve to elsewhere in the suite (e.g. once real Auth guards are exercised,
@@ -15,7 +17,7 @@ it('defaults member_model to the app User model class', function (): void {
 
     $config = require __DIR__.'/../../config/translations.php';
 
-    expect($config['member_model'])->toBe(App\Models\User::class);
+    expect($config['member_model'])->toBe(User::class);
 });
 
 it('honours the TRANSLATIONS_MEMBER_MODEL env override', function (): void {
