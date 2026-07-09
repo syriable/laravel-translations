@@ -24,12 +24,16 @@ use Syriable\Translations\Enums\Tone;
  * @property Carbon|null $updated_at
  * @property-read int|null $messages_count
  * @property-read int|null $translated_messages_count
+ * @property-read int|null $approved_messages_count
+ * @property-read int|null $pending_review_messages_count
+ * @property-read int|null $missing_messages_count
  * @property-read string $flag
  * @property-read int $translation_progress
  *
  * @method static \Illuminate\Database\Eloquent\Builder<Locale> enabled()
  * @method static \Illuminate\Database\Eloquent\Builder<Locale> targets()
  * @method static \Illuminate\Database\Eloquent\Builder<Locale> withTranslationProgressCounts()
+ * @method \Illuminate\Database\Eloquent\Builder<Locale> withTranslationProgressCounts()
  */
 class Locale extends TranslationModel
 {
