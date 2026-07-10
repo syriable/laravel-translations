@@ -71,6 +71,13 @@ The package is pre-1.0; everything below currently ships on `main` and has not y
 
 ### Fixed
 
+- `Translations::set()` and AI translation (`MachineTranslation::apply()`) now no-op when the
+  submitted value is identical to the message's current value, instead of unconditionally
+  resetting `status` back to `Draft` and touching `translated_by` on every resave. Previously,
+  resubmitting unchanged text — a duplicate form submit, a re-run AI suggestion that comes back
+  the same — silently downgraded an already-approved translation and left revision history
+  untouched (revisions were already deduplicated by value), an inconsistent pairing. Only a save
+  that actually changes the value now stamps status/actor and creates a revision.
 - `CasingCheck` no longer flags a false casing mismatch when the source or target's first letter
   belongs to a script without letter case (Arabic, Hebrew, CJK, ...). `mb_strtoupper()` is a no-op
   on such letters, so the previous logic always read them as "uppercase" and compared that against
