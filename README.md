@@ -156,6 +156,10 @@ Translations::set('cart.checkout', 'Pagar', 'es', [
     'meta'   => ['source' => 'support-ticket'],
 ]);
 
+// Resaving the exact same value is a no-op: no revision, no status/actor change
+Translations::set('cart.checkout', 'Pagar', 'es');
+Translations::set('cart.checkout', 'Pagar', 'es'); // ignored - value didn't change
+
 // Clear a single locale's value (keeps the phrase), or delete the phrase entirely
 Translations::forget('cart.checkout', 'es');   // value → null, status → open
 Translations::forget('cart.checkout');         // deletes the phrase across all locales

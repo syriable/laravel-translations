@@ -1,5 +1,6 @@
 <?php
 
+use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Revision;
@@ -54,4 +55,17 @@ it('does not record a revision when revisions are disabled', function (): void {
     Translations::set('messages.greeting', 'Hola', 'es');
 
     expect(Revision::query()->count())->toBe(0);
+});
+
+it('treats resaving the same value as a no-op instead of a new record', function (): void {
+    $message = Translations::set('messages.greeting', 'Hola', 'es');
+    Translations::review()->approve($message);
+
+    expect($message->fresh()->status)->toBe(MessageStatus::Approved);
+
+    $resaved = Translations::set('messages.greeting', 'Hola', 'es', ['by' => 'carol']);
+
+    expect($resaved->status)->toBe(MessageStatus::Approved);
+    expect(Revision::query()->count())->toBe(1);
+    expect(Revision::query()->latest('id')->first()->changed_by)->not->toBe('carol');
 });

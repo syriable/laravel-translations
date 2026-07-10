@@ -67,6 +67,10 @@ class TranslationManager
                 'locale_id' => $localeModel->id,
             ]);
 
+            if ($message->exists && $message->value === $value) {
+                return $message;
+            }
+
             return Message::withStamp($options['reason'] ?? 'manual', $options['by'] ?? null, $options['meta'] ?? [], function (?string $resolvedBy) use ($message, $value, $options): Message {
                 $message->fill([
                     'value' => $value,

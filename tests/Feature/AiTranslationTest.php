@@ -2,11 +2,13 @@
 
 use Syriable\Translations\Ai\FakeTranslator;
 use Syriable\Translations\Contracts\Translator;
+use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\AiUsage;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Models\Phrase;
+use Syriable\Translations\Models\Revision;
 
 beforeEach(function (): void {
     $this->fake = new FakeTranslator(fn ($request) => 'TR:'.$request->text);
@@ -78,6 +80,19 @@ it('exposes an explanatory note on the suggestion result', function (): void {
 
     expect($result->note())->toBe('Fake explanation in en.');
     expect($result->recommended()['recommended'])->toBeTrue();
+});
+
+it('treats an AI suggestion identical to the current value as a no-op', function (): void {
+    Translations::set('messages.greeting', 'Hello there', 'en');
+    $message = Translations::translate('messages.greeting', 'es');
+    Translations::review()->approve($message);
+
+    expect($message->fresh()->status)->toBe(MessageStatus::Approved);
+
+    $reapplied = Translations::translate('messages.greeting', 'es');
+
+    expect($reapplied->status)->toBe(MessageStatus::Approved);
+    expect(Revision::query()->where('message_id', $message->id)->count())->toBe(1);
 });
 
 it('translates every open message for a locale', function (): void {
