@@ -1,0 +1,22 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+        - config
+        - database
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    configDirectories:
+        - config
+    tmpDir: build/phpstan
+    checkOctaneCompatibility: true
+    checkModelProperties: true
+    type_coverage:
+        param: 99
+        return: 99
+        property: 99
+        constant: 99
+        declare: 0
