@@ -28,6 +28,7 @@ use Syriable\Translations\Enums\Tone;
  * @property-read int|null $approved_messages_count
  * @property-read int|null $pending_review_messages_count
  * @property-read int|null $missing_messages_count
+ * @property-read int|null $issues_messages_count
  * @property-read string $flag
  * @property-read int $translation_progress
  *
