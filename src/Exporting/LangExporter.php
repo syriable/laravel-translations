@@ -8,6 +8,7 @@ use Syriable\Translations\Files\LangWriter;
 use Syriable\Translations\Models\Bundle;
 use Syriable\Translations\Models\ExportRecord;
 use Syriable\Translations\Models\Locale;
+use Syriable\Translations\Models\Phrase;
 use Syriable\Translations\Support\ExportSummary;
 
 class LangExporter
@@ -27,7 +28,7 @@ class LangExporter
 
         $locales = Locale::query()
             ->enabled()
-            ->when($localeFilter, fn ($query) => $query->where('code', $localeFilter))
+            ->when($localeFilter, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('code', $localeFilter))
             ->get();
 
         foreach ($locales as $locale) {
@@ -37,7 +38,11 @@ class LangExporter
 
         $summary->durationMs = (int) ((hrtime(true) - $started) / 1_000_000);
 
-        ExportRecord::query()->create($summary->toArray() + [
+        ExportRecord::query()->create([
+            'locale_count' => $summary->localeCount,
+            'file_count' => $summary->fileCount,
+            'phrase_count' => $summary->phraseCount,
+            'duration_ms' => $summary->durationMs,
             'source' => $options['source'] ?? 'cli',
             'triggered_by' => $options['triggered_by'] ?? null,
         ]);
@@ -50,7 +55,7 @@ class LangExporter
     private function exportLocale(Locale $locale, string $langPath, ?string $bundleFilter, ExportSummary $summary): void
     {
         $bundles = Bundle::query()
-            ->when($bundleFilter, fn ($query) => $query->where('name', $bundleFilter))
+            ->when($bundleFilter, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('name', $bundleFilter))
             ->get();
 
         foreach ($bundles as $bundle) {
@@ -79,8 +84,9 @@ class LangExporter
         $approvedOnly = config('translations.export.approved_only', false);
         $excludeEmpty = config('translations.export.exclude_empty', true);
 
-        $messages = $bundle->phrases()
-            ->with(['messages' => fn ($query) => $query->where('locale_id', $locale->id)])
+        $messages = Phrase::query()
+            ->where('bundle_id', $bundle->id)
+            ->with(['messages' => fn (\Illuminate\Database\Eloquent\Relations\Relation $query): \Illuminate\Database\Eloquent\Relations\Relation => $query->where('locale_id', $locale->id)])
             ->get();
 
         $values = [];

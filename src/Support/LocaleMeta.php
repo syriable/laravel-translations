@@ -6,9 +6,9 @@ use Syriable\Translations\Enums\Direction;
 
 class LocaleMeta
 {
-    private const RTL = ['ar', 'fa', 'he', 'ur', 'ps', 'sd', 'ug', 'yi'];
+    private const array RTL = ['ar', 'fa', 'he', 'ur', 'ps', 'sd', 'ug', 'yi'];
 
-    private const NAMES = [
+    private const array NAMES = [
         'en' => ['English', 'English'],
         'ar' => ['Arabic', 'العربية'],
         'es' => ['Spanish', 'Español'],
@@ -44,6 +44,9 @@ class LocaleMeta
         return (bool) preg_match('/^[a-z]{2,3}([_-][a-z0-9]{1,8})*$/i', $code);
     }
 
+    /**
+     * @return array{name: string, native_name: string, direction: Direction, code: string}
+     */
     public static function for(string $code): array
     {
         $base = strtolower(explode('_', str_replace('-', '_', $code))[0]);
@@ -65,7 +68,7 @@ class LocaleMeta
         }
         asort($locales);
 
-        return array_map(fn ($locale) => $locale['name'], $locales);
+        return array_map(fn (array $locale): string => $locale['name'], $locales);
     }
 
     public static function getNameByCode(string $code): string
@@ -78,7 +81,7 @@ class LocaleMeta
         return self::for($code)['native_name'];
     }
 
-    public static function getDirectionByCode(string $code): string
+    public static function getDirectionByCode(string $code): Direction
     {
         return self::for($code)['direction'];
     }

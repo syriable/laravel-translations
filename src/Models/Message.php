@@ -29,20 +29,20 @@ use Syriable\Translations\Events\MessageStatusChanged;
  * @property string|null $ai_provider
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read string|null $source
+ * @property string|null $source
  * @property-read Locale $locale
  * @property-read Phrase $phrase
  * @property-read Message|null $sourceMessage
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<Message> translated()
+ * @method static \Illuminate\Database\Eloquent\Builder<Message> open()
+ * @method static \Illuminate\Database\Eloquent\Builder<Message> pendingReview()
  */
 class Message extends TranslationModel
 {
     protected string $table_ = 'messages';
 
     protected $guarded = [];
-
-    protected $appends = [
-        'source',
-    ];
 
     protected ?string $originalValueBeforeSave = null;
 
@@ -179,7 +179,8 @@ class Message extends TranslationModel
 
     public function comment(string $body, ?string $memberId = null, array $meta = []): Comment
     {
-        $comment = $this->comments()->create([
+        $comment = Comment::query()->create([
+            'message_id' => $this->id,
             'member_id' => $memberId,
             'body' => $body,
             'meta' => $meta,

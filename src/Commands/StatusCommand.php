@@ -23,7 +23,9 @@ class StatusCommand extends Command
     private function localeReport(Insights $insights): int
     {
         $rows = collect($insights->coverage())
-            ->when($this->option('locale'), fn ($rows) => $rows->where('locale', $this->option('locale')))
+            ->when($this->option('locale'), function (\Illuminate\Support\Collection $rows): \Illuminate\Support\Collection {
+                return $rows->where('locale', (string) $this->option('locale'));
+            })
             ->map(fn (array $row) => [
                 $row['locale'],
                 $row['total'],

@@ -25,8 +25,8 @@ class MessageSeeder
         $created = 0;
 
         Phrase::query()
-            ->whereDoesntHave('messages', fn ($query) => $query->where('locale_id', $locale->id))
-            ->chunkById(500, function ($phrases) use ($locale, &$created): void {
+            ->whereDoesntHave('messages', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $locale->id))
+            ->chunkById(500, function (\Illuminate\Support\Collection $phrases) use ($locale, &$created): void {
                 foreach ($phrases as $phrase) {
                     Message::query()->create([
                         'phrase_id' => $phrase->id,

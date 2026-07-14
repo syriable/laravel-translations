@@ -72,9 +72,9 @@ class Inspector
 
         Message::query()
             ->translated()
-            ->when($localeId, fn ($query) => $query->where('locale_id', $localeId))
+            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $localeId))
             ->with(['phrase', 'locale'])
-            ->chunkById(200, function ($messages) use (&$stats): void {
+            ->chunkById(200, function (\Illuminate\Support\Collection $messages) use (&$stats): void {
                 foreach ($messages as $message) {
                     foreach ($this->inspectAndStore($message) as $issue) {
                         $stats[$issue->severity->value]++;

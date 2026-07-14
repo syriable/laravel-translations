@@ -10,6 +10,7 @@ use Syriable\Translations\Ai\MachineReview;
 use Syriable\Translations\Ai\MachineTranslation;
 use Syriable\Translations\Analytics\Insights;
 use Syriable\Translations\Enums\MessageStatus;
+use Syriable\Translations\Enums\Tone;
 use Syriable\Translations\Events\LocaleAdded;
 use Syriable\Translations\Events\PhraseCreated;
 use Syriable\Translations\Exporting\LangExporter;
@@ -143,7 +144,7 @@ class TranslationManager
 
         $matches = Phrase::query()
             ->where('bundle_id', $phrase->bundle_id)
-            ->when(empty($options['include_self']), fn ($query) => $query->whereKeyNot($phrase->getKey()))
+            ->when(empty($options['include_self']), fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->whereKeyNot($phrase->getKey()))
             ->orderBy('key')
             ->get()
             ->filter(fn (Phrase $candidate): bool => array_slice(Phrase::segments($candidate->key), 0, $depth) === $prefix)
@@ -161,6 +162,16 @@ class TranslationManager
         return Locale::query()->orderBy('code')->get();
     }
 
+    /**
+     * @param  array{
+     *     name?: string,
+     *     native_name?: string|null,
+     *     direction?: Enums\Direction,
+     *     is_source?: bool,
+     *     tone?: Tone,
+     *     enabled?: bool,
+     * }  $attributes
+     */
     public function addLocale(string $code, array $attributes = []): Locale
     {
         if (! LocaleMeta::isValidCode($code)) {
@@ -169,13 +180,18 @@ class TranslationManager
             );
         }
 
+        $meta = LocaleMeta::for($code);
+
         $locale = Locale::query()->firstOrCreate(
             ['code' => $code],
-            array_merge(
-                LocaleMeta::for($code),
-                ['enabled' => true],
-                $attributes,
-            ),
+            [
+                'name' => $attributes['name'] ?? $meta['name'],
+                'native_name' => $attributes['native_name'] ?? $meta['native_name'],
+                'direction' => $attributes['direction'] ?? $meta['direction'],
+                'is_source' => $attributes['is_source'] ?? false,
+                'tone' => $attributes['tone'] ?? Tone::Neutral,
+                'enabled' => $attributes['enabled'] ?? true,
+            ],
         );
 
         if ($locale->wasRecentlyCreated) {
@@ -257,7 +273,7 @@ class TranslationManager
         [$bundle, $phraseKey] = $this->split($key);
 
         $phrase = Phrase::query()
-            ->whereHas('bundle', fn ($query) => $query->where('name', $bundle)->whereNull('namespace'))
+            ->whereHas('bundle', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('name', $bundle)->whereNull('namespace'))
             ->where('key', $phraseKey)
             ->first();
 
@@ -266,7 +282,7 @@ class TranslationManager
         }
 
         return Phrase::query()
-            ->whereHas('bundle', fn ($query) => $query->where('name', '_json'))
+            ->whereHas('bundle', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('name', '_json'))
             ->where('key', $key)
             ->first();
     }
@@ -286,7 +302,10 @@ class TranslationManager
             ['format' => 'php'],
         );
 
-        $phrase = $bundle->phrases()->create(['key' => $phraseKey]);
+        $phrase = Phrase::query()->create([
+            'bundle_id' => $bundle->id,
+            'key' => $phraseKey,
+        ]);
 
         $this->seeder->seedPhrase($phrase);
         PhraseCreated::dispatch($phrase);

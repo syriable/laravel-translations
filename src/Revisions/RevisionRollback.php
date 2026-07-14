@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Revisions;
 
+use Illuminate\Support\Collection;
+use RuntimeException;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Enums\RevisionReason;
 use Syriable\Translations\Models\Message;
@@ -12,6 +14,10 @@ class RevisionRollback
     public function toRevision(Revision $revision, ?string $by = null): Message
     {
         $message = $revision->message;
+
+        if ($message === null) {
+            throw new RuntimeException('Revision is missing its message.');
+        }
 
         return $this->restore($message, $revision->new_value, $by);
     }
@@ -32,7 +38,7 @@ class RevisionRollback
     {
         $revisions = Revision::query()
             ->where('created_at', '>=', $date)
-            ->when($localeId, fn ($query) => $query->forLocale($localeId))
+            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->forLocale($localeId))
             ->with('message')
             ->orderByDesc('created_at')
             ->get();
@@ -40,7 +46,11 @@ class RevisionRollback
         return $this->rollbackEach($revisions, $by);
     }
 
-    private function rollbackEach($revisions, ?string $by): array
+    /**
+     * @param  Collection<int, Revision>  $revisions
+     * @return array{rolled_back: int, messages_affected: int}
+     */
+    private function rollbackEach(Collection $revisions, ?string $by): array
     {
         $rolledBack = 0;
         $messages = [];

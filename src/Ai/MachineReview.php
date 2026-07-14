@@ -88,9 +88,9 @@ class MachineReview
         Message::query()
             ->where('locale_id', $target->id)
             ->translated()
-            ->when($phraseIds, fn ($query) => $query->whereIn('phrase_id', $phraseIds))
+            ->when($phraseIds, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->whereIn('phrase_id', $phraseIds))
             ->with(['locale', 'phrase.bundle', 'sourceMessage'])
-            ->chunkById(500, function ($messages) use (&$pairs): void {
+            ->chunkById(500, function (\Illuminate\Support\Collection $messages) use (&$pairs): void {
                 foreach ($messages as $message) {
                     $source = $message->source;
 
@@ -110,12 +110,17 @@ class MachineReview
 
     private function logUsage(ReviewRequest $request, ?ReviewResult $result, ?string $error = null): void
     {
-        $model = $result?->model ?? $request->model ?? config('translations.ai.model');
-        $inputChars = $result?->inputChars ?? 0;
-        $outputChars = $result?->outputChars ?? 0;
+        $model = $result !== null
+            ? ($result->model ?? $request->model ?? config('translations.ai.model'))
+            : ($request->model ?? config('translations.ai.model'));
+        $inputChars = $result !== null ? $result->inputChars : 0;
+        $outputChars = $result !== null ? $result->outputChars : 0;
+        $provider = $result !== null
+            ? $result->provider
+            : ($request->provider ?? config('translations.ai.provider'));
 
         AiUsage::query()->create([
-            'provider' => $result?->provider ?? $request->provider ?? config('translations.ai.provider'),
+            'provider' => $provider,
             'model' => $model,
             'phrase_id' => null,
             'source_locale' => $request->sourceLocale,

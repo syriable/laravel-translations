@@ -29,7 +29,7 @@ class AiProviders
     public static function usable(): Collection
     {
         return collect(config('translations.ai.allowed_providers', []))
-            ->filter(fn (string $name): bool => static::hasCredentials($name))
+            ->filter(fn (string $name): bool => self::hasCredentials($name))
             ->map(fn (string $name): ?AiProvider => AiProvider::tryFrom($name))
             ->filter()
             ->values();

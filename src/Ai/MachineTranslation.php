@@ -82,7 +82,7 @@ class MachineTranslation
             ->where('locale_id', $target->id)
             ->open()
             ->with('phrase.usages')
-            ->chunkById(config('translations.ai.batch_size', 20), function ($messages) use ($target, $options, &$count): void {
+            ->chunkById(config('translations.ai.batch_size', 20), function (\Illuminate\Support\Collection $messages) use ($target, $options, &$count): void {
                 foreach ($messages as $message) {
                     if ($this->apply($message->phrase, $target, $options)) {
                         $count++;
@@ -97,7 +97,7 @@ class MachineTranslation
     {
         $texts = Message::query()
             ->whereIn('phrase_id', $phraseIds)
-            ->whereHas('locale', fn ($query) => $query->where('is_source', true))
+            ->whereHas('locale', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('is_source', true))
             ->pluck('value')
             ->filter()
             ->all();
@@ -172,23 +172,31 @@ class MachineTranslation
             ? Message::query()->where('phrase_id', $phrase->id)->where('locale_id', $source->id)->first()
             : null;
 
-        return (string) ($message?->value ?? '');
+        return (string) ($message !== null ? $message->value : '');
     }
 
     private function logUsage(Phrase $phrase, TranslationRequest $request, ?TranslationResult $result, ?string $error = null): void
     {
+        $inputChars = $result !== null ? $result->inputChars : mb_strlen($request->text);
+        $outputChars = $result !== null ? $result->outputChars : 0;
+        $model = $result !== null
+            ? ($result->model ?? $request->model ?? config('translations.ai.model'))
+            : ($request->model ?? config('translations.ai.model'));
+
         AiUsage::query()->create([
-            'provider' => $result?->provider ?? $request->provider ?? config('translations.ai.provider'),
-            'model' => $result?->model ?? $request->model ?? config('translations.ai.model'),
+            'provider' => $result !== null
+                ? $result->provider
+                : ($request->provider ?? config('translations.ai.provider')),
+            'model' => $model,
             'phrase_id' => $phrase->id,
             'source_locale' => $request->sourceLocale,
             'target_locale' => $request->targetLocale,
-            'input_chars' => $result?->inputChars ?? mb_strlen($request->text),
-            'output_chars' => $result?->outputChars ?? 0,
+            'input_chars' => $inputChars,
+            'output_chars' => $outputChars,
             'cost' => $this->estimator->estimate(
-                $result?->model ?? config('translations.ai.model'),
-                $result?->inputChars ?? mb_strlen($request->text),
-                $result?->outputChars ?? 0,
+                $model,
+                $inputChars,
+                $outputChars,
             ),
             'success' => $error === null,
             'error' => $error,

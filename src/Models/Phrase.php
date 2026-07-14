@@ -22,6 +22,8 @@ use Syriable\Translations\Enums\Priority;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Bundle $bundle
+ * @property-read Message|null $sourceMessage
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Message> $messages
  */
 class Phrase extends TranslationModel
 {

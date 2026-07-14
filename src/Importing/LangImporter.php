@@ -181,7 +181,12 @@ class LangImporter
 
     private function record(ImportSummary $summary, array $options, bool $fresh): void
     {
-        ImportRecord::query()->create($summary->toArray() + [
+        ImportRecord::query()->create([
+            'locale_count' => $summary->localeCount,
+            'phrase_count' => $summary->phraseCount,
+            'created_count' => $summary->createdCount,
+            'updated_count' => $summary->updatedCount,
+            'duration_ms' => $summary->durationMs,
             'source' => $options['source'] ?? 'cli',
             'triggered_by' => $options['triggered_by'] ?? null,
             'fresh' => $fresh,

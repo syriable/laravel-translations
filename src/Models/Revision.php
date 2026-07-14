@@ -6,6 +6,16 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Syriable\Translations\Enums\RevisionReason;
 
+/**
+ * @property int $id
+ * @property int $message_id
+ * @property string|null $old_value
+ * @property string|null $new_value
+ * @property RevisionReason $reason
+ * @property string|null $changed_by
+ * @property array<string, mixed>|null $meta
+ * @property-read Message|null $message
+ */
 class Revision extends TranslationModel
 {
     protected string $table_ = 'revisions';

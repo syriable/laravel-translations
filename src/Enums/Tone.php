@@ -38,7 +38,7 @@ enum Tone: string implements HasColor, HasDescription, HasIcon, HasLabel
         };
     }
 
-    public function getColor(): string|array
+    public function getColor(): array
     {
         return match ($this) {
             self::Neutral => Color::Gray,

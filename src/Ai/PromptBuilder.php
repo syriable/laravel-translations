@@ -7,7 +7,7 @@ use Syriable\Translations\Support\TranslationRequest;
 
 class PromptBuilder
 {
-    private const MAX_LENGTH = 16000;
+    private const int MAX_LENGTH = 16000;
 
     public function build(TranslationRequest $request): string
     {

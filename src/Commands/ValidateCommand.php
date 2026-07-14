@@ -51,8 +51,8 @@ class ValidateCommand extends Command
 
         QualityIssue::query()
             ->where('fixable', true)
-            ->when($localeId, fn ($query) => $query->where('locale_id', $localeId))
-            ->each(function ($issue) use ($inspector, &$fixed): void {
+            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $localeId))
+            ->each(function (QualityIssue $issue) use ($inspector, &$fixed): void {
                 if ($inspector->fix($issue)) {
                     $fixed++;
                 }

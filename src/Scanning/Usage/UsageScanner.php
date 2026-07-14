@@ -9,7 +9,7 @@ use Syriable\Translations\Scanning\FileWalker;
 
 class UsageScanner
 {
-    private const PATTERNS = [
+    private const array PATTERNS = [
         '/__\(\s*[\'"]([^\'"]+)[\'"]/',
         '/\btrans(?:_choice)?\(\s*[\'"]([^\'"]+)[\'"]/',
         '/@lang\(\s*[\'"]([^\'"]+)[\'"]/',
@@ -78,7 +78,7 @@ class UsageScanner
         $index = [];
         $bundles = Bundle::query()->pluck('name', 'id');
 
-        Phrase::query()->select(['id', 'bundle_id', 'key'])->chunkById(1000, function ($phrases) use (&$index, $bundles): void {
+        Phrase::query()->select(['id', 'bundle_id', 'key'])->chunkById(1000, function (\Illuminate\Support\Collection $phrases) use (&$index, $bundles): void {
             foreach ($phrases as $phrase) {
                 $bundle = $bundles[$phrase->bundle_id] ?? null;
                 $dotted = $bundle === '_json' ? $phrase->key : "{$bundle}.{$phrase->key}";

@@ -54,13 +54,13 @@ class Insights
 
     public function overallCoverage(): float
     {
-        $total = Message::query()->whereHas('locale', fn ($query) => $query->targets())->count();
+        $total = Message::query()->whereHas('locale', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('is_source', false))->count();
 
         if ($total === 0) {
             return 0.0;
         }
 
-        $done = Message::query()->translated()->whereHas('locale', fn ($query) => $query->targets())->count();
+        $done = Message::query()->translated()->whereHas('locale', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('is_source', false))->count();
 
         return round($done / $total * 100, 1);
     }
@@ -74,7 +74,7 @@ class Insights
             ->orderByDesc('changes')
             ->limit(config('translations.analytics.leaderboard_limit', 10))
             ->get()
-            ->map(fn (Revision $row) => ['member' => $row->changed_by, 'changes' => (int) $row->changes])
+            ->map(fn (Revision $row): array => ['member' => $row->changed_by, 'changes' => (int) $row->getAttribute('changes')])
             ->all();
     }
 
@@ -88,7 +88,7 @@ class Insights
             ->groupBy('day')
             ->orderBy('day')
             ->get()
-            ->map(fn (Revision $row) => ['day' => $row->day, 'changes' => (int) $row->changes])
+            ->map(fn (Revision $row): array => ['day' => (string) $row->getAttribute('day'), 'changes' => (int) $row->getAttribute('changes')])
             ->all();
     }
 
@@ -99,7 +99,7 @@ class Insights
         return Message::query()
             ->translated()
             ->where('updated_at', '<', $staleAfter)
-            ->when($localeId, fn ($query) => $query->where('locale_id', $localeId))
+            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $localeId))
             ->with(['phrase', 'locale'])
             ->get()
             ->all();

@@ -123,7 +123,7 @@ class SuggestionParser
 
         $items = array_values(array_filter(
             $decoded,
-            fn ($item) => is_array($item) && array_key_exists('value', $item),
+            fn (mixed $item): bool => is_array($item) && array_key_exists('value', $item),
         ));
 
         return $items === [] ? null : $items;
@@ -197,8 +197,8 @@ class SuggestionParser
      * honoured when it marks a single suggestion; otherwise the highest-confidence
      * variant wins, falling back to the first one.
      *
-     * @param  array<int, array{value: string, confidence: float|null, recommended: bool, note: string|null}>  $variants
-     * @return array<int, array{value: string, confidence: float|null, recommended: bool, note: string|null}>
+     * @param  array<int, array{value: string, base_value: string, confidence: float|null, recommended: bool, note: string|null}>  $variants
+     * @return array<int, array{value: string, base_value: string, confidence: float|null, recommended: bool, note: string|null}>
      */
     private function normalizeRecommended(array $variants): array
     {

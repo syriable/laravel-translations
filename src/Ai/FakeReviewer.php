@@ -31,7 +31,7 @@ class FakeReviewer implements Reviewer
             provider: $request->provider ?? 'fake',
             model: $request->model ?? 'fake',
             inputChars: array_sum(array_map(
-                fn (array $pair) => mb_strlen(($pair['source'] ?? '').($pair['target'] ?? '')),
+                fn (array $pair): int => mb_strlen($pair['source'].$pair['target']),
                 $request->pairs,
             )),
             outputChars: 0,

@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Analytics;
 
 use Illuminate\Database\Eloquent\Builder;
+use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Models\Bundle;
 use Syriable\Translations\Models\Locale;
 
@@ -27,7 +28,9 @@ class BundleCoverage
                 }
 
                 $phrases->whereHas('messages', function (Builder $messages): void {
-                    $messages->translated()->whereHas('locale', fn (Builder $locale) => $locale->enabled()->targets());
+                    $messages
+                        ->where('status', '!=', MessageStatus::Open->value)
+                        ->whereHas('locale', fn (Builder $locale): Builder => $locale->where('enabled', true)->where('is_source', false));
                 }, '=', $targets);
             },
         ]);

@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Ai;
 
 use Syriable\Translations\Contracts\Reviewer;
+use Syriable\Translations\Support\ReviewIssue;
 use Syriable\Translations\Support\ReviewRequest;
 use Syriable\Translations\Support\ReviewResult;
 
@@ -26,7 +27,7 @@ class AiReviewer implements Reviewer
         $issues = $this->parser->parse($response['issues'] ?? [], array_keys($request->pairs));
 
         $outputChars = array_sum(array_map(
-            fn ($issue) => mb_strlen($issue->description.(string) $issue->suggestion),
+            fn (ReviewIssue $issue): int => mb_strlen($issue->description.(string) $issue->suggestion),
             $issues,
         ));
 
@@ -51,8 +52,8 @@ class AiReviewer implements Reviewer
         $lines = [];
 
         foreach ($pairs as $key => $pair) {
-            $source = $this->fence($pair['source'] ?? '');
-            $target = $this->fence($pair['target'] ?? '');
+            $source = $this->fence($pair['source']);
+            $target = $this->fence($pair['target']);
 
             $lines[] = "{$key}: «{$source}» → «{$target}»";
         }

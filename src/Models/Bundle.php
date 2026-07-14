@@ -15,6 +15,8 @@ use Syriable\Translations\Analytics\BundleCoverage;
  * @property string $format
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read int|null $phrases_count
+ * @property-read int|null $translated_phrases_count
  */
 class Bundle extends TranslationModel
 {

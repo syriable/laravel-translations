@@ -4,6 +4,15 @@ namespace Syriable\Translations\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $source
+ * @property string|null $note
+ * @property bool $case_sensitive
+ * @property bool $whole_word
+ * @property string|null $created_by
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, TermDefinition> $definitions
+ */
 class Term extends TranslationModel
 {
     protected string $table_ = 'terms';
@@ -25,6 +34,9 @@ class Term extends TranslationModel
 
     public function definitionFor(int $localeId): ?TermDefinition
     {
-        return $this->definitions->firstWhere('locale_id', $localeId);
+        return TermDefinition::query()
+            ->where('term_id', $this->id)
+            ->where('locale_id', $localeId)
+            ->first();
     }
 }

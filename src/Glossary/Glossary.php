@@ -29,8 +29,8 @@ class Glossary
     {
         $this->cache = null;
 
-        return $term->definitions()->updateOrCreate(
-            ['locale_id' => $localeId],
+        return TermDefinition::query()->updateOrCreate(
+            ['term_id' => $term->id, 'locale_id' => $localeId],
             ['value' => $value, 'approved_by' => $approvedBy],
         );
     }
@@ -56,7 +56,13 @@ class Glossary
         $pairs = [];
 
         foreach ($this->matching($text, $localeId) as $term) {
-            $pairs[$term->source] = $term->definitionFor($localeId)->value;
+            $definition = $term->definitionFor($localeId);
+
+            if ($definition === null) {
+                continue;
+            }
+
+            $pairs[$term->source] = $definition->value;
         }
 
         return $pairs;

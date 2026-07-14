@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Syriable\Translations\Enums\Direction;
+use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Enums\Tone;
 
 /**
@@ -95,7 +96,7 @@ class Locale extends TranslationModel
     {
         return $query->withCount([
             'messages',
-            'messages as translated_messages_count' => fn (Builder $query) => $query->translated(),
+            'messages as translated_messages_count' => fn (Builder $query): Builder => $query->where('status', '!=', MessageStatus::Open->value),
         ]);
     }
 
@@ -116,7 +117,7 @@ class Locale extends TranslationModel
                     return 0;
                 }
 
-                $translated = (int) ($this->translated_messages_count ?? $this->messages()->translated()->count());
+                $translated = (int) ($this->translated_messages_count ?? $this->messages()->where('status', '!=', MessageStatus::Open->value)->count());
 
                 return (int) round($translated / $total * 100);
             },
