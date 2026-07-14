@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
+use Syriable\Metrics\MetricsServiceProvider;
 use Syriable\Translations\TranslationsServiceProvider;
 
 class TestCase extends Orchestra
@@ -16,7 +17,10 @@ class TestCase extends Orchestra
 
     protected function getPackageProviders($app): array
     {
-        return [TranslationsServiceProvider::class];
+        return [
+            MetricsServiceProvider::class,
+            TranslationsServiceProvider::class,
+        ];
     }
 
     protected function defineEnvironment($app): void

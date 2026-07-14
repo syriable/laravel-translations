@@ -26,13 +26,27 @@
         "illuminate/support": "^12.0||^13.0",
         "filament/support": "^5.0",
         "outhebox/blade-flags": "^1.7.0",
-        "laravel/ai": "^0.8.0"
+        "laravel/ai": "^0.8.0",
+        "syriable/laravel-metrics": "^1.0.0"
     },
     "require-dev": {
-        "laravel/pint": "^1.0",
+        "barryvdh/laravel-debugbar": "^4.2",
+        "fakerphp/faker": "^1.24.1",
+        "larastan/larastan": "^3.9.6",
+        "laravel/boost": "^2.4",
+        "laravel/pao": "^1.0.6",
+        "laravel/pint": "dev-feat/blade-support",
+        "laravel/sail": "^1.58.0",
+        "mockery/mockery": "^1.6.12",
+        "nunomaduro/collision": "^8.9.4",
         "orchestra/testbench": "^10.0||^11.0",
-        "pestphp/pest": "^3.0||^4.0",
-        "pestphp/pest-plugin-laravel": "^3.0||^4.0"
+        "pestphp/pest": "^4.7.0",
+        "pestphp/pest-plugin-laravel": "^4.1.0",
+        "pestphp/pest-plugin-type-coverage": "^4.0.4",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "rector/rector": "^2.4.2"
     },
     "autoload": {
         "psr-4": {
@@ -46,6 +60,9 @@
         }
     },
     "scripts": {
+        "post-autoload-dump": "@composer run prepare",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=512M",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"
@@ -53,7 +70,8 @@
     "config": {
         "sort-packages": true,
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
         }
     },
     "extra": {

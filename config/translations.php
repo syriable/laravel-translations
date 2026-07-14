@@ -258,6 +258,14 @@ return [
         'cache_ttl' => 3600,
         'stale_after_days' => 30,
         'leaderboard_limit' => 10,
+
+        // Weights for the translations.quality metric composite score.
+        'quality' => [
+            'weights' => [
+                'review' => 0.6,
+                'validation' => 0.4,
+            ],
+        ],
     ],
 
     /*

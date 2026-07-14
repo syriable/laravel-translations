@@ -2,7 +2,9 @@
 
 namespace Syriable\Translations;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Syriable\Metrics\Facades\Metrics;
 use Syriable\Translations\Ai\AiReviewer;
 use Syriable\Translations\Ai\AiTranslator;
 use Syriable\Translations\Commands\ExportCommand;
@@ -28,6 +30,10 @@ use Syriable\Translations\Listeners\RecordRevision;
 use Syriable\Translations\Listeners\RecordStatusActivity;
 use Syriable\Translations\Listeners\RunQualityChecks;
 use Syriable\Translations\Listeners\ScanUsageAfterImport;
+use Syriable\Translations\Metrics\BundleCoverageMetric;
+use Syriable\Translations\Metrics\TranslationCoverageMetric;
+use Syriable\Translations\Metrics\TranslationQualityMetric;
+use Syriable\Translations\Metrics\TranslationVelocityMetric;
 use Syriable\Translations\Support\AuthActorResolver;
 
 class TranslationsServiceProvider extends ServiceProvider
@@ -50,6 +56,7 @@ class TranslationsServiceProvider extends ServiceProvider
         $this->registerMigrations();
         $this->registerCommands();
         $this->registerListeners();
+        $this->registerMetrics();
     }
 
     private function registerTranslations(): void
@@ -99,12 +106,22 @@ class TranslationsServiceProvider extends ServiceProvider
 
     private function registerListeners(): void
     {
-        $this->app['events']->listen(MessageSaved::class, RecordRevision::class);
-        $this->app['events']->listen(MessageSaved::class, RunQualityChecks::class);
-        $this->app['events']->listen(MessageSaved::class, FlushInsightsCache::class);
-        $this->app['events']->listen(MessageStatusChanged::class, RecordStatusActivity::class);
-        $this->app['events']->listen(CommentPosted::class, RecordCommentActivity::class);
-        $this->app['events']->listen(ImportFinished::class, ScanUsageAfterImport::class);
-        $this->app['events']->listen(ImportFinished::class, FlushInsightsCache::class);
+        Event::listen(MessageSaved::class, RecordRevision::class);
+        Event::listen(MessageSaved::class, RunQualityChecks::class);
+        Event::listen(MessageSaved::class, FlushInsightsCache::class);
+        Event::listen(MessageStatusChanged::class, RecordStatusActivity::class);
+        Event::listen(CommentPosted::class, RecordCommentActivity::class);
+        Event::listen(ImportFinished::class, ScanUsageAfterImport::class);
+        Event::listen(ImportFinished::class, FlushInsightsCache::class);
+    }
+
+    private function registerMetrics(): void
+    {
+        Metrics::register(
+            TranslationCoverageMetric::class,
+            TranslationQualityMetric::class,
+            TranslationVelocityMetric::class,
+            BundleCoverageMetric::class,
+        );
     }
 }
