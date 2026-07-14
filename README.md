@@ -5,8 +5,9 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.md)
 
 Manage your Laravel translations from code — import and export language files, machine-translate with
-AI, enforce quality, track revision history, detect hardcoded strings, manage a glossary, and report
-analytics. It's a **backend-only** toolkit: one config file, one service provider, one `Translations`
+AI, enforce quality, track revision history, detect hardcoded strings, manage a glossary, report
+analytics, and expose KPIs through pre-built [`laravel-metrics`](https://github.com/syriable/laravel-metrics)
+definitions. It's a **backend-only** toolkit: one config file, one service provider, one `Translations`
 facade. No UI, no frontend, no opinions about how you render anything.
 
 ```php
@@ -36,15 +37,19 @@ Translations::export();                            // database → lang files
   - [Glossary](#glossary)
   - [Revision history](#revision-history)
   - [Review workflow](#review-workflow)
+  - [Comments](#comments)
   - [Analytics](#analytics)
+  - [Metrics](#metrics)
   - [Scanning your source code](#scanning-your-source-code)
   - [Activity log](#activity-log)
+  - [Background jobs](#background-jobs)
 - [API reference](#api-reference)
 - [Artisan commands](#artisan-commands)
 - [Configuration reference](#configuration-reference)
 - [Events](#events)
 - [Models](#models)
 - [Enums](#enums)
+- [Contracts](#contracts)
 - [Testing](#testing)
 - [Security](#security)
 - [Contributing](#contributing)
@@ -73,17 +78,16 @@ Or do the steps yourself:
 ```bash
 php artisan vendor:publish --tag=translations-config
 php artisan vendor:publish --tag=translations-migrations   # optional, only to customize them
+php artisan vendor:publish --tag=translations-lang         # optional, package UI strings
 php artisan migrate
 ```
 
 **Requirements:** PHP 8.3+, Laravel 12 or 13.
 
-**AI features are optional.** They're only needed when you call `Translations::translate()` and friends,
-and they rely on the [`laravel/ai`](https://github.com/laravel/ai) SDK:
-
-```bash
-composer require laravel/ai
-```
+**Dependencies:** The package pulls in [`laravel/ai`](https://github.com/laravel/ai) (AI translation
+and review) and [`syriable/laravel-metrics`](https://github.com/syriable/laravel-metrics) (pre-built
+KPI definitions). AI calls are still opt-in via config — set `ai.enabled = true` and configure a
+provider key in your `.env` before calling `Translations::translate()` or `Translations::aiReview()`.
 
 ---
 
@@ -118,8 +122,8 @@ Four core records describe your catalog:
 | --- | --- | --- |
 | **Locale** | `tx_locales` | A language (`en`, `es`, …). Exactly one is the **source** (`is_source = true`). |
 | **Bundle** | `tx_bundles` | A language file — `auth.php`, the JSON bundle (`_json`), or a vendor namespace. |
-| **Phrase** | `tx_phrases` | A translation key within a bundle (e.g. `failed`, `nested.key`), with detected placeholders/HTML/plural flags. |
-| **Message** | `tx_messages` | The translated value of one phrase in one locale, with a [status](#enums). |
+| **Phrase** | `tx_phrases` | A translation key within a bundle (e.g. `failed`, `nested.key`), with detected placeholders/HTML/plural flags, an optional developer `note`, and a `priority`. |
+| **Message** | `tx_messages` | The translated value of one phrase in one locale, with a [status](#enums), optional AI metadata (`ai_generated`, `ai_provider`), and review fields. |
 
 A dotted key like `auth.failed` resolves to bundle `auth` + phrase `failed`. Nested lang files use
 their slash path as the bundle name (`filament/resources/bundle-resource.title`), matching Laravel's
@@ -205,7 +209,19 @@ Translations::addLocale('de');
 
 // Mark a locale as the source
 Translations::addLocale('en', ['is_source' => true]);
+
+// Override auto-detected metadata (name, native_name, direction, tone, enabled)
+Translations::addLocale('xx-custom', [
+    'name'        => 'Custom Locale',
+    'native_name' => 'Locale personnalisée',
+    'direction'   => \Syriable\Translations\Enums\Direction::Rtl,
+    'tone'        => \Syriable\Translations\Enums\Tone::Formal,
+]);
 ```
+
+Each `Locale` exposes computed accessors — `flag` (SVG data URI via `outhebox/blade-flags`) and
+`translation_progress` (percent of non-open messages) — and scopes `enabled()`, `targets()`, and
+`withTranslationProgressCounts()`.
 
 ### Importing and exporting language files
 
@@ -510,7 +526,22 @@ $review->reject($message, 'Too informal', 'lead-reviewer');
 > register yourself (`Gate::policy(Message::class, MessagePolicy::class)`), or write your own. See
 > [Security](#security).
 
+### Comments
+
+Attach threaded discussion to a message. Comments fire `CommentPosted`, which the package listens to
+for activity logging when `activities.enabled` is on:
+
+```php
+$message->comment('Needs a more formal tone.', memberId: 'maria');
+$message->comments;   // HasMany Comment
+```
+
+Each `Comment` belongs to its `message` and optionally to a `member` (via `member_model`).
+
 ### Analytics
+
+The `Insights` service returns simple, cached PHP arrays — handy for dashboards that don't need
+ranges or comparisons:
 
 ```php
 $insights = Translations::insights();   // Insights
@@ -521,9 +552,48 @@ $insights->bundleCoverage();     // per-bundle progress (per lang file)
 $insights->overallCoverage();    // single float across all target locales
 $insights->leaderboard();        // top contributors by change count
 $insights->velocity(days: 30);   // changes per day
-$insights->stale($localeId);     // messages older than analytics.stale_after_days
+$insights->stale($localeId);     // Message models older than analytics.stale_after_days
+$insights->staleCounts();        // stale counts keyed by locale_id
 $insights->flush();              // drop the cache (also flushed automatically on writes/imports)
 ```
+
+### Metrics
+
+For richer analytics — date ranges, trend buckets, partition breakdowns, formula datasets, and a
+normalized API payload — the package registers four metrics with
+[`syriable/laravel-metrics`](https://github.com/syriable/laravel-metrics) at boot. Run them by key:
+
+```php
+use Syriable\Metrics\Facades\Metrics;
+
+$coverage = Metrics::run('translations.coverage');
+$coverage->groups('coverage');             // per-locale partition breakdown
+$coverage->value('translated');            // aggregate across all locales
+
+$quality = Metrics::run('translations.quality');
+$quality->value('quality');                // weighted review + validation score
+
+$velocity = Metrics::run('translations.velocity', ['range' => '30d']);
+$velocity->points('changes');              // daily revision counts
+
+$bundles = Metrics::run('translations.bundle_coverage');
+$bundles->groups('percent');               // per-bundle completion %
+```
+
+| Key | Type | Grouped by | Datasets / formula |
+| --- | --- | --- | --- |
+| `translations.coverage` | all-time partition | locale name | `total`, `translated`, `untranslated`, `approved` → `coverage = translated / total * 100` |
+| `translations.quality` | all-time partition | locale name | `translated`, `approved`, `issues` → `review`, `validation`, weighted `quality` |
+| `translations.velocity` | trend | date (`revisions.created_at`) | `changes` (revision count per bucket) |
+| `translations.bundle_coverage` | all-time partition | bundle label | `total_phrases`, `completed_phrases` → `percent = completed_phrases / total_phrases * 100` |
+
+Only enabled, non-source target locales are included. Quality weights default to 60% review
+(`approved / translated`) and 40% validation (`100 - issues / translated * 100`); override via
+`translations.analytics.quality.weights`.
+
+Metric classes live in `Syriable\Translations\Metrics` if you want to inspect or extend them.
+See the [laravel-metrics README](https://github.com/syriable/laravel-metrics) for ranges,
+comparisons, caching, and building your own metrics.
 
 ### Scanning your source code
 
@@ -539,15 +609,33 @@ Translations::scanLoose();
 Both return a stats array. Run them in the background with the `--queue` flag on the corresponding
 commands, or set `scanning.scan_after_import` to queue a usage scan after every import.
 
+Hardcoded-string hits are stored as `LooseString` records (`Pending` → `Resolved` when the source
+text disappears, or `Converted` / `Ignored` when you action them). Persisted ignore rules live in
+`IgnoredString`.
+
 ### Activity log
 
-A small recorder for auditing arbitrary member actions:
+When `activities.enabled` is on, the package automatically records status changes and comments via
+`RecordStatusActivity` and `RecordCommentActivity`. For arbitrary actions, use the recorder directly:
 
 ```php
 use Syriable\Translations\Support\ActivityRecorder;
 
 app(ActivityRecorder::class)->log('glossary.updated', $term, ['field' => 'value'], memberId: 'maria');
 ```
+
+### Background jobs
+
+Long-running work can be queued on the connection/name from `translations.queue`:
+
+| Job | Dispatched by | What it does |
+| --- | --- | --- |
+| `TranslateLocaleJob` | `translations:translate --queue` | AI-translate every open message in a locale |
+| `ScanQualityJob` | `translations:validate --queue` | Run the quality inspector |
+| `ScanUsageJob` | `translations:scan-usage --queue` | Record phrase usages from source files |
+| `ScanLooseJob` | `translations:scan-loose --queue` | Detect hardcoded strings |
+
+`ScanUsageAfterImport` also queues a usage scan when `scanning.scan_after_import` is enabled.
 
 ---
 
@@ -658,6 +746,11 @@ return [
         'retention_days' => 90,
     ],
 
+    // Automatic activity feed for status changes and comments.
+    'activities' => [
+        'enabled' => true,
+    ],
+
     'ai' => [
         'enabled'           => env('TRANSLATIONS_AI', false),
         'provider'          => env('TRANSLATIONS_AI_PROVIDER', 'openai'),
@@ -672,7 +765,7 @@ return [
 
     'quality' => [
         'run_on_save'  => true,
-        'checks'       => [ /* the eight QualityCheck classes */ ],
+        'checks'       => [ /* the ten QualityCheck classes */ ],
         'length_ratio' => ['min' => 0.5, 'max' => 2.0, 'overrides' => []],
     ],
 
@@ -684,9 +777,15 @@ return [
     ],
 
     'analytics' => [
-        'cache_ttl'        => 3600,
-        'stale_after_days' => 30,
+        'cache_ttl'         => 3600,
+        'stale_after_days'  => 30,
         'leaderboard_limit' => 10,
+        'quality'           => [
+            'weights' => [
+                'review'     => 0.6,  // approved / translated
+                'validation' => 0.4,  // 100 - issues / translated * 100
+            ],
+        ],
     ],
 
     'queue' => [
@@ -705,12 +804,15 @@ Hook into the translation lifecycle with standard Laravel listeners:
 | Event | Fired when | Payload |
 | --- | --- | --- |
 | `MessageSaved` | a message's value changes | `$message`, `$oldValue`, `$reason`, `$changedBy`, `$meta` |
+| `MessageStatusChanged` | a message's status changes (not on create) | `$message`, `$oldStatus`, `$newStatus`, `$reason`, `$changedBy`, `$meta` |
+| `CommentPosted` | a comment is added to a message | `$comment` |
 | `ImportFinished` | an import completes | `$summary` (`ImportSummary`) |
 | `ExportFinished` | an export completes | `$summary` (`ExportSummary`) |
 | `PhraseCreated` | a new phrase is created via the API | `$phrase` |
 | `LocaleAdded` | a new locale is added | `$locale` |
 
 Internally, `MessageSaved` drives `RecordRevision`, `RunQualityChecks` and `FlushInsightsCache`;
+`MessageStatusChanged` and `CommentPosted` drive activity logging (when enabled);
 `ImportFinished` drives `ScanUsageAfterImport` (when enabled) and a cache flush.
 
 ---
@@ -721,12 +823,13 @@ All models live in `Syriable\Translations\Models` and use the configured table p
 
 | Model | Notable relations / methods |
 | --- | --- |
-| `Locale` | `messages()`, `members()` (belongs-to-many against your configured `member_model`); scopes `enabled()`, `targets()`; static `source()`, `flushSourceCache()` |
+| `Locale` | `messages()`, `members()` (belongs-to-many against your configured `member_model`); scopes `enabled()`, `targets()`, `withTranslationProgressCounts()`; accessors `flag`, `translation_progress`; static `source()`, `flushSourceCache()`; casts `direction` → `Direction`, `tone` → `Tone` |
 | `Bundle` | `phrases()`; `isJson()`, `label()`; scope `withTranslationProgress()`, `translationProgressPercent()` |
-| `Phrase` | `bundle()`, `messages()`, `usages()`; `dottedKey()`; scope `missingIn(int $localeId)` |
-| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`, `translator()`, `reviewer()` (belongs-to against `member_model`); scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()`, `resolveActor()` |
+| `Phrase` | `bundle()`, `messages()`, `usages()`, `sourceMessage()`; `dottedKey()`; scope `missingIn(int $localeId)`; casts `priority` → `Priority`, `placeholders` → array |
+| `Message` | `phrase()`, `locale()`, `revisions()`, `issues()`, `comments()`, `activities()`, `translator()`, `reviewer()` (belongs-to against `member_model`); `comment(string $body, ?string $memberId, array $meta)`; scopes `translated()`, `open()`, `pendingReview()`; static `stamp()`, `clearStamp()`, `withStamp()`, `resolveActor()`; accessor `source` |
 | `Revision` | `message()`, `member()` (belongs-to against `member_model`); scopes `forLocale(int)`, `between(?string, ?string)` |
 | `QualityIssue` | `message()`, `locale()`; `severity` cast to `Severity` |
+| `Comment` | `message()`, `member()` (belongs-to against `member_model`) |
 | `Term` / `TermDefinition` | `definitions()` / `term()`, `locale()`; `definitionFor(int $localeId)` |
 | `AiUsage`, `Activity`, `PhraseUsage`, `LooseString`, `IgnoredString`, `ImportRecord`, `ExportRecord` | audit / support records |
 
@@ -742,6 +845,25 @@ In `Syriable\Translations\Enums`:
 - **`Severity`** — `Error`, `Warning`, `Info` (deterministic quality checks). Method: `order()`.
 - **`ReviewSeverity`** — `Low`, `Medium`, `High` (AI quality-review priority). Methods: `order()`, `fromModel()`.
 - **`LooseStringStatus`** — `Pending`, `Converted`, `Ignored`, `Resolved`.
+- **`AiProvider`** — `OpenAI`, `Anthropic`, `Gemini`, `Groq`, `Mistral`, `XAI`, `DeepSeek`, `OpenRouter`, `Ollama`, `Cohere`. Used for allowlisting and UI labels/icons (via `filament/support` contracts).
+- **`Direction`** — `Ltr`, `Rtl`. Auto-detected for known locale codes; overridable on `addLocale()`.
+- **`Tone`** — `Neutral`, `Formal`, `Informal`, `Friendly`, `Technical`. Default per locale; passed to AI prompts.
+- **`Priority`** — `Critical`, `High`, `Medium`, `Low`, `Optional`. Stored on each `Phrase` (default `Optional`).
+
+---
+
+## Contracts
+
+Swappable interfaces in `Syriable\Translations\Contracts`:
+
+| Contract | Default binding | Purpose |
+| --- | --- | --- |
+| `Translator` | `AiTranslator` | AI translation engine (`FakeTranslator` in tests) |
+| `Reviewer` | `AiReviewer` | AI quality-review engine (`FakeReviewer` in tests) |
+| `ResolvesActor` | `AuthActorResolver` | Who performed a write when `by` is omitted |
+| `QualityCheck` | — | Implement to add a deterministic quality check |
+| `HasTranslationRole` | — | Implement on `member_model` to resolve `MemberRole` |
+| `SourceScanner` | — | Extend source-code scanning (used internally) |
 
 ---
 
@@ -749,7 +871,8 @@ In `Syriable\Translations\Enums`:
 
 ```bash
 composer test          # vendor/bin/pest
-vendor/bin/pint        # code style
+composer analyse       # vendor/bin/phpstan analyse
+composer format        # vendor/bin/pint
 ```
 
 The suite runs on Pest 4 + Orchestra Testbench against in-memory SQLite. AI paths are tested through
@@ -766,8 +889,8 @@ how to report a vulnerability.
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). Run `composer test` and `vendor/bin/pint --test` before
-opening a PR.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Run `composer test`, `composer analyse`, and
+`composer format` before opening a PR.
 
 ## Changelog
 
