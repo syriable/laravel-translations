@@ -25,5 +25,5 @@ vendor/bin/pint      # code style (Laravel preset)
 ## Pull requests
 
 - Run `composer test` and `vendor/bin/pint --test` before opening a PR. CI runs both across
-  PHP 8.3–8.4 and Laravel 12.
+  PHP 8.4+ and Laravel 12.
 - Keep PRs focused. Describe the behaviour change and link any related issue.

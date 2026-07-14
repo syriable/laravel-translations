@@ -82,7 +82,7 @@ php artisan vendor:publish --tag=translations-lang         # optional, package U
 php artisan migrate
 ```
 
-**Requirements:** PHP 8.3+, Laravel 12 or 13.
+**Requirements:** PHP 8.4+, Laravel 12 or 13.
 
 **Dependencies:** The package pulls in [`laravel/ai`](https://github.com/laravel/ai) (AI translation
 and review) and [`syriable/laravel-metrics`](https://github.com/syriable/laravel-metrics) (pre-built
