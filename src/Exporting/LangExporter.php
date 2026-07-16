@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Exporting;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Events\ExportFinished;
 use Syriable\Translations\Files\LangWriter;
@@ -28,7 +30,7 @@ class LangExporter
 
         $locales = Locale::query()
             ->enabled()
-            ->when($localeFilter, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('code', $localeFilter))
+            ->when($localeFilter, fn (Builder $query): Builder => $query->where('code', $localeFilter))
             ->get();
 
         foreach ($locales as $locale) {
@@ -55,7 +57,7 @@ class LangExporter
     private function exportLocale(Locale $locale, string $langPath, ?string $bundleFilter, ExportSummary $summary): void
     {
         $bundles = Bundle::query()
-            ->when($bundleFilter, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('name', $bundleFilter))
+            ->when($bundleFilter, fn (Builder $query): Builder => $query->where('name', $bundleFilter))
             ->get();
 
         foreach ($bundles as $bundle) {
@@ -86,7 +88,7 @@ class LangExporter
 
         $messages = Phrase::query()
             ->where('bundle_id', $bundle->id)
-            ->with(['messages' => fn (\Illuminate\Database\Eloquent\Relations\Relation $query): \Illuminate\Database\Eloquent\Relations\Relation => $query->where('locale_id', $locale->id)])
+            ->with(['messages' => fn (Relation $query): Relation => $query->where('locale_id', $locale->id)])
             ->get();
 
         $values = [];

@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -23,7 +24,7 @@ use Syriable\Translations\Enums\Priority;
  * @property Carbon|null $updated_at
  * @property-read Bundle $bundle
  * @property-read Message|null $sourceMessage
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Message> $messages
+ * @property-read Collection<int, Message> $messages
  */
 class Phrase extends TranslationModel
 {

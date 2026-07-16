@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Analytics;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Models\Locale;
@@ -54,13 +55,13 @@ class Insights
 
     public function overallCoverage(): float
     {
-        $total = Message::query()->whereHas('locale', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('is_source', false))->count();
+        $total = Message::query()->whereHas('locale', fn (Builder $query): Builder => $query->where('is_source', false))->count();
 
         if ($total === 0) {
             return 0.0;
         }
 
-        $done = Message::query()->translated()->whereHas('locale', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('is_source', false))->count();
+        $done = Message::query()->translated()->whereHas('locale', fn (Builder $query): Builder => $query->where('is_source', false))->count();
 
         return round($done / $total * 100, 1);
     }
@@ -99,7 +100,7 @@ class Insights
         return Message::query()
             ->translated()
             ->where('updated_at', '<', $staleAfter)
-            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $localeId))
+            ->when($localeId, fn (Builder $query): Builder => $query->where('locale_id', $localeId))
             ->with(['phrase', 'locale'])
             ->get()
             ->all();

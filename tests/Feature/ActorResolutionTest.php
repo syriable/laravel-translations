@@ -4,7 +4,9 @@ use Illuminate\Auth\GenericUser;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Syriable\Translations\Ai\FakeTranslator;
 use Syriable\Translations\Contracts\ResolvesActor;
+use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Enums\RevisionReason;
 use Syriable\Translations\Facades\Translations;
 use Syriable\Translations\Models\Locale;
@@ -74,8 +76,8 @@ it('auto-resolves who activated an AI translation, not the AI itself', function 
     });
 
     $this->app->instance(
-        Syriable\Translations\Contracts\Translator::class,
-        new Syriable\Translations\Ai\FakeTranslator(fn ($request) => 'TR:'.$request->text)
+        Translator::class,
+        new FakeTranslator(fn ($request) => 'TR:'.$request->text)
     );
 
     Translations::set('messages.greeting', 'Hello there', 'en');

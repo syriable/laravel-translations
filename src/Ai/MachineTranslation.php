@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Ai;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Syriable\Translations\Contracts\Translator;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Enums\RevisionReason;
@@ -82,7 +84,7 @@ class MachineTranslation
             ->where('locale_id', $target->id)
             ->open()
             ->with('phrase.usages')
-            ->chunkById(config('translations.ai.batch_size', 20), function (\Illuminate\Support\Collection $messages) use ($target, $options, &$count): void {
+            ->chunkById(config('translations.ai.batch_size', 20), function (Collection $messages) use ($target, $options, &$count): void {
                 foreach ($messages as $message) {
                     if ($this->apply($message->phrase, $target, $options)) {
                         $count++;
@@ -97,7 +99,7 @@ class MachineTranslation
     {
         $texts = Message::query()
             ->whereIn('phrase_id', $phraseIds)
-            ->whereHas('locale', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('is_source', true))
+            ->whereHas('locale', fn (Builder $query): Builder => $query->where('is_source', true))
             ->pluck('value')
             ->filter()
             ->all();

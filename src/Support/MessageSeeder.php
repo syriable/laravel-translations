@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Support;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Syriable\Translations\Enums\MessageStatus;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\Message;
@@ -25,8 +27,8 @@ class MessageSeeder
         $created = 0;
 
         Phrase::query()
-            ->whereDoesntHave('messages', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $locale->id))
-            ->chunkById(500, function (\Illuminate\Support\Collection $phrases) use ($locale, &$created): void {
+            ->whereDoesntHave('messages', fn (Builder $query): Builder => $query->where('locale_id', $locale->id))
+            ->chunkById(500, function (Collection $phrases) use ($locale, &$created): void {
                 foreach ($phrases as $phrase) {
                     Message::query()->create([
                         'phrase_id' => $phrase->id,

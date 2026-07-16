@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Ai;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Syriable\Translations\Contracts\Reviewer;
 use Syriable\Translations\Models\AiUsage;
 use Syriable\Translations\Models\Locale;
@@ -88,9 +90,9 @@ class MachineReview
         Message::query()
             ->where('locale_id', $target->id)
             ->translated()
-            ->when($phraseIds, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->whereIn('phrase_id', $phraseIds))
+            ->when($phraseIds, fn (Builder $query): Builder => $query->whereIn('phrase_id', $phraseIds))
             ->with(['locale', 'phrase.bundle', 'sourceMessage'])
-            ->chunkById(500, function (\Illuminate\Support\Collection $messages) use (&$pairs): void {
+            ->chunkById(500, function (Collection $messages) use (&$pairs): void {
                 foreach ($messages as $message) {
                     $source = $message->source;
 

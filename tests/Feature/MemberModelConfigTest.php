@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Config\Repository;
+use Illuminate\Support\Arr;
 
 it('defaults member_model to the app User model class', function (): void {
     // Isolate this assertion from whatever `auth.providers.users.model` happens to
@@ -12,8 +14,8 @@ it('defaults member_model to the app User model class', function (): void {
     // the repository from a copy of the real config with just that key removed, rather
     // than swapping in a bare one, so database/etc config survives for test teardown.
     $items = config()->all();
-    Illuminate\Support\Arr::forget($items, 'auth.providers.users.model');
-    app()->instance('config', new Illuminate\Config\Repository($items));
+    Arr::forget($items, 'auth.providers.users.model');
+    app()->instance('config', new Repository($items));
 
     $config = require __DIR__.'/../../config/translations.php';
 

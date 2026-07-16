@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Revisions;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use RuntimeException;
 use Syriable\Translations\Enums\MessageStatus;
@@ -38,7 +39,7 @@ class RevisionRollback
     {
         $revisions = Revision::query()
             ->where('created_at', '>=', $date)
-            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->forLocale($localeId))
+            ->when($localeId, fn (Builder $query): Builder => $query->forLocale($localeId))
             ->with('message')
             ->orderByDesc('created_at')
             ->get();

@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Syriable\Translations\Analytics\Insights;
 
 class StatusCommand extends Command
@@ -23,7 +24,7 @@ class StatusCommand extends Command
     private function localeReport(Insights $insights): int
     {
         $rows = collect($insights->coverage())
-            ->when($this->option('locale'), function (\Illuminate\Support\Collection $rows): \Illuminate\Support\Collection {
+            ->when($this->option('locale'), function (Collection $rows): Collection {
                 return $rows->where('locale', (string) $this->option('locale'));
             })
             ->map(fn (array $row) => [

@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 use Syriable\Translations\Jobs\ScanQualityJob;
 use Syriable\Translations\Models\Locale;
 use Syriable\Translations\Models\QualityIssue;
@@ -51,7 +52,7 @@ class ValidateCommand extends Command
 
         QualityIssue::query()
             ->where('fixable', true)
-            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $localeId))
+            ->when($localeId, fn (Builder $query): Builder => $query->where('locale_id', $localeId))
             ->each(function (QualityIssue $issue) use ($inspector, &$fixed): void {
                 if ($inspector->fix($issue)) {
                     $fixed++;

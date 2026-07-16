@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $case_sensitive
  * @property bool $whole_word
  * @property string|null $created_by
- * @property-read \Illuminate\Database\Eloquent\Collection<int, TermDefinition> $definitions
+ * @property-read Collection<int, TermDefinition> $definitions
  */
 class Term extends TranslationModel
 {

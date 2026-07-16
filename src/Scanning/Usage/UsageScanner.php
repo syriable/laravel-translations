@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations\Scanning\Usage;
 
+use Illuminate\Support\Collection;
 use Syriable\Translations\Models\Bundle;
 use Syriable\Translations\Models\Phrase;
 use Syriable\Translations\Models\PhraseUsage;
@@ -78,7 +79,7 @@ class UsageScanner
         $index = [];
         $bundles = Bundle::query()->pluck('name', 'id');
 
-        Phrase::query()->select(['id', 'bundle_id', 'key'])->chunkById(1000, function (\Illuminate\Support\Collection $phrases) use (&$index, $bundles): void {
+        Phrase::query()->select(['id', 'bundle_id', 'key'])->chunkById(1000, function (Collection $phrases) use (&$index, $bundles): void {
             foreach ($phrases as $phrase) {
                 $bundle = $bundles[$phrase->bundle_id] ?? null;
                 $dotted = $bundle === '_json' ? $phrase->key : "{$bundle}.{$phrase->key}";

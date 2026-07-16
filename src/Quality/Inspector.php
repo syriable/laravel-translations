@@ -2,6 +2,8 @@
 
 namespace Syriable\Translations\Quality;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Syriable\Translations\Contracts\QualityCheck;
 use Syriable\Translations\Enums\RevisionReason;
 use Syriable\Translations\Models\Locale;
@@ -72,9 +74,9 @@ class Inspector
 
         Message::query()
             ->translated()
-            ->when($localeId, fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('locale_id', $localeId))
+            ->when($localeId, fn (Builder $query): Builder => $query->where('locale_id', $localeId))
             ->with(['phrase', 'locale'])
-            ->chunkById(200, function (\Illuminate\Support\Collection $messages) use (&$stats): void {
+            ->chunkById(200, function (Collection $messages) use (&$stats): void {
                 foreach ($messages as $message) {
                     foreach ($this->inspectAndStore($message) as $issue) {
                         $stats[$issue->severity->value]++;

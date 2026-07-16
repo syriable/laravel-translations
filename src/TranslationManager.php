@@ -2,6 +2,7 @@
 
 namespace Syriable\Translations;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -144,7 +145,7 @@ class TranslationManager
 
         $matches = Phrase::query()
             ->where('bundle_id', $phrase->bundle_id)
-            ->when(empty($options['include_self']), fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->whereKeyNot($phrase->getKey()))
+            ->when(empty($options['include_self']), fn (Builder $query): Builder => $query->whereKeyNot($phrase->getKey()))
             ->orderBy('key')
             ->get()
             ->filter(fn (Phrase $candidate): bool => array_slice(Phrase::segments($candidate->key), 0, $depth) === $prefix)
@@ -273,7 +274,7 @@ class TranslationManager
         [$bundle, $phraseKey] = $this->split($key);
 
         $phrase = Phrase::query()
-            ->whereHas('bundle', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('name', $bundle)->whereNull('namespace'))
+            ->whereHas('bundle', fn (Builder $query): Builder => $query->where('name', $bundle)->whereNull('namespace'))
             ->where('key', $phraseKey)
             ->first();
 
@@ -282,7 +283,7 @@ class TranslationManager
         }
 
         return Phrase::query()
-            ->whereHas('bundle', fn (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder => $query->where('name', '_json'))
+            ->whereHas('bundle', fn (Builder $query): Builder => $query->where('name', '_json'))
             ->where('key', $key)
             ->first();
     }
