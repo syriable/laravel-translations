@@ -43,7 +43,7 @@ class LooseStringScanner
                     [
                         'text' => $match['text'],
                         'element_type' => $match['element_type'],
-                        'scanner' => $file->getExtension(),
+                        'scanner' => $this->scannerType($file),
                         'status' => LooseStringStatus::Pending,
                     ],
                 );
@@ -59,6 +59,18 @@ class LooseStringScanner
             ->update(['status' => LooseStringStatus::Resolved->value]);
 
         return ['files_scanned' => $files, 'detected' => $detected, 'resolved' => $resolved];
+    }
+
+    private function scannerType(SplFileInfo $file): string
+    {
+        $filename = $file->getFilename();
+
+        return match (true) {
+            str_ends_with($filename, '.blade.php') => 'blade',
+            str_ends_with($filename, '.vue') => 'vue',
+            str_ends_with($filename, '.jsx'), str_ends_with($filename, '.tsx') => 'react',
+            default => $file->getExtension() ?: 'php',
+        };
     }
 
     private function extract(SplFileInfo $file, string $contents): array
