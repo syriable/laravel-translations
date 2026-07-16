@@ -133,3 +133,54 @@ it('does not flag the source locale against itself', function (): void {
 
     expect(QualityIssue::query()->whereHas('message', fn ($q) => $q->whereHas('locale', fn ($l) => $l->where('is_source', true)))->count())->toBe(0);
 });
+
+it('does not flag a short but valid chinese translation for length ratio', function (): void {
+    Translations::addLocale('zh');
+
+    Translations::set('auth.failed', 'These credentials do not match our records.', 'en');
+    Translations::set('auth.failed', '这些凭据与我们的记录不符。', 'zh');
+
+    expect(QualityIssue::query()->where('check', 'length_ratio')->exists())->toBeFalse();
+});
+
+it('does not flag typical japanese and korean translations for length ratio', function (string $locale, string $value): void {
+    Translations::addLocale($locale);
+
+    Translations::set('auth.throttle', 'Too many login attempts. Please try again in :seconds seconds.', 'en');
+    Translations::set('auth.throttle', $value, $locale);
+
+    expect(QualityIssue::query()->where('check', 'length_ratio')->exists())->toBeFalse();
+})->with([
+    'japanese' => ['ja', 'ログイン試行回数が多すぎます。:seconds 秒後に再試行してください。'],
+    'korean' => ['ko', '로그인 시도가 너무 많습니다. :seconds초 후에 다시 시도하세요.'],
+]);
+
+it('still flags a truncated chinese translation for length ratio', function (): void {
+    Translations::addLocale('zh');
+
+    Translations::set('auth.failed', 'These credentials do not match our records.', 'en');
+    Translations::set('auth.failed', '错', 'zh');
+
+    expect(QualityIssue::query()->where('check', 'length_ratio')->exists())->toBeTrue();
+});
+
+it('still flags latin translations that are far too short for length ratio', function (): void {
+    Translations::set('auth.failed', 'These credentials do not match our records.', 'en');
+    Translations::set('auth.failed', 'Error.', 'es');
+
+    expect(QualityIssue::query()->where('check', 'length_ratio')->exists())->toBeTrue();
+});
+
+it('honours length ratio overrides over cjk defaults', function (): void {
+    config()->set('translations.quality.length_ratio.overrides.zh', [
+        'min' => 0.95,
+        'max' => 1.05,
+    ]);
+
+    Translations::addLocale('zh');
+
+    Translations::set('auth.failed', 'These credentials do not match our records.', 'en');
+    Translations::set('auth.failed', '这些凭据与我们的记录不符。', 'zh');
+
+    expect(QualityIssue::query()->where('check', 'length_ratio')->exists())->toBeTrue();
+});

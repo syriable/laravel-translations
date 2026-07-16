@@ -221,8 +221,22 @@ return [
             GlossaryCheck::class,
         ],
         'length_ratio' => [
+            // Compared against a density-adjusted ratio:
+            // (target_chars * target_density) / (source_chars * source_density).
             'min' => 0.5,
             'max' => 2.0,
+            'default_density' => 1.0,
+            // Named profiles map locale families to higher densities so CJK (and
+            // future high-density scripts) are not falsely flagged vs Latin source.
+            'profiles' => [
+                'cjk' => [
+                    'locales' => ['zh', 'ja', 'ko'],
+                    'density' => 2.8,
+                ],
+            ],
+            // Optional per-locale density overrides (exact code or base language).
+            'densities' => [],
+            // Optional per-locale bound overrides; take precedence over profile/global.
             'overrides' => [],
         ],
     ],

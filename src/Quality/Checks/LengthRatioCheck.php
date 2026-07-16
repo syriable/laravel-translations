@@ -1,13 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Syriable\Translations\Quality\Checks;
 
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Quality\Check;
+use Syriable\Translations\Quality\LengthRatio\LengthRatioEvaluator;
 use Syriable\Translations\Support\Issue;
 
 class LengthRatioCheck extends Check
 {
+    public function __construct(private readonly LengthRatioEvaluator $evaluator = new LengthRatioEvaluator)
+    {
+        parent::__construct();
+    }
+
     public function key(): string
     {
         return 'length_ratio';
@@ -25,8 +33,16 @@ class LengthRatioCheck extends Check
             return null;
         }
 
-        $ratio = mb_strlen($message->value) / $sourceLength;
-        [$min, $max] = $this->bounds($message->locale->code);
+        $evaluation = $this->evaluator->evaluate(
+            $source->value,
+            $source->locale->code,
+            $message->value,
+            $message->locale->code,
+        );
+
+        $ratio = $evaluation['ratio'];
+        $min = $evaluation['min'];
+        $max = $evaluation['max'];
 
         if ($ratio >= $min && $ratio <= $max) {
             return null;
@@ -35,18 +51,11 @@ class LengthRatioCheck extends Check
         return Issue::warning(
             $this->key(),
             sprintf('Translation length ratio %.2f is outside the expected range (%.2f–%.2f).', $ratio, $min, $max),
-            ['ratio' => round($ratio, 2)],
+            [
+                'ratio' => round($ratio, 2),
+                'source_density' => $evaluation['source_density'],
+                'target_density' => $evaluation['target_density'],
+            ],
         );
-    }
-
-    private function bounds(string $code): array
-    {
-        $config = config('translations.quality.length_ratio', []);
-        $override = $config['overrides'][$code] ?? [];
-
-        return [
-            (float) ($override['min'] ?? $config['min'] ?? 0.5),
-            (float) ($override['max'] ?? $config['max'] ?? 2.0),
-        ];
     }
 }
