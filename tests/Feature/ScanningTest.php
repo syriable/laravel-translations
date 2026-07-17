@@ -26,6 +26,18 @@ it('records where a translation key is used in source code', function (): void {
     expect(PhraseUsage::query()->where('file_path', 'views/home.blade.php')->exists())->toBeTrue();
 });
 
+it('stores the resolved file type for usages, so blade templates are not labelled php', function (): void {
+    Translations::set('messages.greeting', 'Hello', 'en');
+
+    file_put_contents($this->workspace.'/views/home.blade.php', "<h1>{{ __('messages.greeting') }}</h1>");
+    file_put_contents($this->workspace.'/views/helper.php', "<?php echo __('messages.greeting');");
+
+    (new UsageScanner)->scan('views', $this->workspace);
+
+    expect(PhraseUsage::query()->where('file_path', 'views/home.blade.php')->sole()->file_type)->toBe('blade')
+        ->and(PhraseUsage::query()->where('file_path', 'views/helper.php')->sole()->file_type)->toBe('php');
+});
+
 it('detects hardcoded strings while skipping translated ones', function (): void {
     file_put_contents(
         $this->workspace.'/views/page.blade.php',

@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use Syriable\Translations\Models\Bundle;
 use Syriable\Translations\Models\Phrase;
 use Syriable\Translations\Models\PhraseUsage;
+use Syriable\Translations\Scanning\FileType;
 use Syriable\Translations\Scanning\FileWalker;
 
 class UsageScanner
@@ -44,7 +45,7 @@ class UsageScanner
                 $found++;
                 $usage = PhraseUsage::query()->updateOrCreate(
                     ['phrase_id' => $phraseId, 'file_path' => $relative, 'line' => $line],
-                    ['snippet' => $snippet, 'file_type' => $file->getExtension()],
+                    ['snippet' => $snippet, 'file_type' => FileType::forFile($file)],
                 );
 
                 $seen[] = $usage->id;
