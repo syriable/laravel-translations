@@ -6,6 +6,7 @@ use SplFileInfo;
 use Syriable\Translations\Enums\LooseStringStatus;
 use Syriable\Translations\Models\IgnoredString;
 use Syriable\Translations\Models\LooseString;
+use Syriable\Translations\Scanning\FileType;
 use Syriable\Translations\Scanning\FileWalker;
 
 class LooseStringScanner
@@ -63,14 +64,7 @@ class LooseStringScanner
 
     private function scannerType(SplFileInfo $file): string
     {
-        $filename = $file->getFilename();
-
-        return match (true) {
-            str_ends_with($filename, '.blade.php') => 'blade',
-            str_ends_with($filename, '.vue') => 'vue',
-            str_ends_with($filename, '.jsx'), str_ends_with($filename, '.tsx') => 'react',
-            default => $file->getExtension() ?: 'php',
-        };
+        return FileType::forFile($file);
     }
 
     private function extract(SplFileInfo $file, string $contents): array
