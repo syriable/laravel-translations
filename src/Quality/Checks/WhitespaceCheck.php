@@ -31,12 +31,12 @@ class WhitespaceCheck extends Check
             && $this->trailing($message->value) === $this->trailing($source->value);
 
         if (! $edgesMatch) {
-            $problems[] = 'leading/trailing whitespace';
+            $problems[] = __('translations::messages.quality.checks.whitespace.problems.leading_trailing');
         }
 
         // Repeated spaces inside the translation that the source does not have.
         if ($this->hasRepeatedSpaces($message->value) && ! $this->hasRepeatedSpaces($source->value)) {
-            $problems[] = 'double spaces';
+            $problems[] = __('translations::messages.quality.checks.whitespace.problems.double_spaces');
         }
 
         if ($problems === []) {
@@ -46,8 +46,8 @@ class WhitespaceCheck extends Check
         return new Issue(
             $this->key(),
             Severity::Warning,
-            'Whitespace issue(s): '.implode(', ', $problems).'.',
-            'Match the source whitespace and collapse repeated spaces.',
+            __('translations::messages.quality.checks.whitespace.description', ['problems' => implode(', ', $problems)]),
+            __('translations::messages.quality.checks.whitespace.suggestion'),
             true,
             ['problems' => $problems],
         );

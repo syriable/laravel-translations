@@ -94,6 +94,59 @@ return [
         ],
     ],
 
+    'quality' => [
+        'checks' => [
+            'missing_placeholder' => [
+                'label' => 'عناصر نائبة مفقودة',
+                'description' => 'الترجمة تفتقد العناصر النائبة: :placeholders',
+            ],
+            'unexpected_placeholder' => [
+                'label' => 'عناصر نائبة غير متوقعة',
+                'description' => 'تحتوي الترجمة على عناصر نائبة غير موجودة في المصدر: :placeholders',
+            ],
+            'plural' => [
+                'label' => 'مُحدِّدات الجمع',
+                'description' => 'مُحدِّدات الجمع لا تطابق سلسلة المصدر.',
+                'suggestion' => 'حافظ على نفس مُحدِّدات الجمع (مثل {1} و [2,*]) في كل جزء.',
+            ],
+            'inconsistent_plural_selector' => [
+                'label' => 'مُحدِّدات جمع غير متسقة',
+                'description' => 'سلسلة الجمع في المصدر تفتقد مُحدِّدات صريحة (مثل {0} و [1,19] و [20,*]) في الجزء/الأجزاء: :missing.',
+            ],
+            'html_tag_mismatch' => [
+                'label' => 'وسوم HTML',
+                'description' => 'وسوم HTML لا تطابق سلسلة المصدر (المصدر: :source؛ الهدف: :target).',
+            ],
+            'length_ratio' => [
+                'label' => 'نسبة الطول',
+                'description' => 'نسبة طول الترجمة :ratio خارج النطاق المتوقع (:min–:max).',
+            ],
+            'whitespace' => [
+                'label' => 'المسافات البيضاء',
+                'description' => 'مشكلة/مشاكل في المسافات البيضاء: :problems.',
+                'suggestion' => 'طابق مسافات المصدر البيضاء ووحّد المسافات المكررة.',
+                'problems' => [
+                    'leading_trailing' => 'مسافات بيضاء في البداية/النهاية',
+                    'double_spaces' => 'مسافات مزدوجة',
+                ],
+            ],
+            'casing' => [
+                'label' => 'حالة الأحرف',
+                'description' => 'حالة الحرف الأول تختلف عن سلسلة المصدر.',
+                'suggestion' => 'طابق حالة أحرف المصدر.',
+            ],
+            'url_email' => [
+                'label' => 'الروابط والبريد',
+                'description' => 'تم تغيير أو حذف روابط أو عناوين بريد إلكتروني: :missing',
+            ],
+            'glossary' => [
+                'label' => 'المسرد',
+                'description' => 'لم تُطبَّق مصطلحات المسرد: :violations',
+                'suggestion' => 'استخدم ترجمة المسرد المعتمدة لكل مصطلح.',
+            ],
+        ],
+    ],
+
     'locale' => [
         'invalid_code' => 'رمز لغة غير صالح [:code]. يُتوقع رمز لغة مثل "en" أو "pt-BR" أو "zh-Hans".',
     ],

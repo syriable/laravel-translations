@@ -30,7 +30,9 @@ class MissingPlaceholderCheck extends Check
 
         return Issue::error(
             $this->key(),
-            'Translation is missing placeholders: '.implode(', ', $missing),
+            __('translations::messages.quality.checks.missing_placeholder.description', [
+                'placeholders' => implode(', ', $missing),
+            ]),
             ['missing' => array_values($missing)],
         );
     }

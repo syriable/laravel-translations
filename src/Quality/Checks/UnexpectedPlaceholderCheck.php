@@ -30,7 +30,9 @@ class UnexpectedPlaceholderCheck extends Check
 
         return Issue::warning(
             $this->key(),
-            'Translation has placeholders not present in the source: '.implode(', ', $extra),
+            __('translations::messages.quality.checks.unexpected_placeholder.description', [
+                'placeholders' => implode(', ', $extra),
+            ]),
             ['extra' => array_values($extra)],
         );
     }

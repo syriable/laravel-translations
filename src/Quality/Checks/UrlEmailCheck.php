@@ -41,7 +41,9 @@ class UrlEmailCheck extends Check
 
         return Issue::error(
             $this->key(),
-            'URLs or email addresses were altered or dropped: '.implode(', ', $missing),
+            __('translations::messages.quality.checks.url_email.description', [
+                'missing' => implode(', ', $missing),
+            ]),
             ['missing' => array_values($missing)],
         );
     }

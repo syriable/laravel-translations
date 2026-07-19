@@ -50,7 +50,11 @@ class LengthRatioCheck extends Check
 
         return Issue::warning(
             $this->key(),
-            sprintf('Translation length ratio %.2f is outside the expected range (%.2f–%.2f).', $ratio, $min, $max),
+            __('translations::messages.quality.checks.length_ratio.description', [
+                'ratio' => round($ratio, 2),
+                'min' => $min,
+                'max' => $max,
+            ]),
             [
                 'ratio' => round($ratio, 2),
                 'source_density' => $evaluation['source_density'],

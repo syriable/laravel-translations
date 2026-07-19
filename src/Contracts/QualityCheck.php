@@ -9,6 +9,8 @@ interface QualityCheck
 {
     public function key(): string;
 
+    public function label(): string;
+
     public function inspect(Message $message, Message $source): ?Issue;
 
     public function fixable(): bool;

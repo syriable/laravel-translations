@@ -94,6 +94,59 @@ return [
         ],
     ],
 
+    'quality' => [
+        'checks' => [
+            'missing_placeholder' => [
+                'label' => 'غائب پلیس ہولڈرز',
+                'description' => 'ترجمے میں پلیس ہولڈرز غائب ہیں: :placeholders',
+            ],
+            'unexpected_placeholder' => [
+                'label' => 'غیر متوقع پلیس ہولڈرز',
+                'description' => 'ترجمے میں ایسے پلیس ہولڈرز ہیں جو ماخذ میں موجود نہیں: :placeholders',
+            ],
+            'plural' => [
+                'label' => 'جمع سلیکٹرز',
+                'description' => 'جمع سلیکٹرز ماخذ سٹرنگ سے مماثل نہیں۔',
+                'suggestion' => 'ہر حصے میں وہی جمع سلیکٹرز رکھیں (مثلاً {1}، [2,*])۔',
+            ],
+            'inconsistent_plural_selector' => [
+                'label' => 'غیر متسق جمع سلیکٹرز',
+                'description' => 'ماخذ جمع سٹرنگ میں واضح سلیکٹرز غائب ہیں (مثلاً {0}، [1,19]، [20,*]) ان حصوں پر: :missing۔',
+            ],
+            'html_tag_mismatch' => [
+                'label' => 'HTML ٹیگز',
+                'description' => 'HTML ٹیگز ماخذ سٹرنگ سے مماثل نہیں (ماخذ: :source؛ ہدف: :target)۔',
+            ],
+            'length_ratio' => [
+                'label' => 'لمبائی کا تناسب',
+                'description' => 'ترجمے کی لمبائی کا تناسب :ratio متوقع حد (:min–:max) سے باہر ہے۔',
+            ],
+            'whitespace' => [
+                'label' => 'خالی جگہیں',
+                'description' => 'خالی جگہ کا مسئلہ/مسائل: :problems۔',
+                'suggestion' => 'ماخذ کی خالی جگہوں سے میل کھائیں اور دہرائی گئی جگہیں کم کریں۔',
+                'problems' => [
+                    'leading_trailing' => 'شروع/آخر کی خالی جگہیں',
+                    'double_spaces' => 'دوہری جگہیں',
+                ],
+            ],
+            'casing' => [
+                'label' => 'حروف کی صورت',
+                'description' => 'پہلے حرف کی صورت ماخذ سٹرنگ سے مختلف ہے۔',
+                'suggestion' => 'ماخذ کی حروف کی صورت سے میل کھائیں۔',
+            ],
+            'url_email' => [
+                'label' => 'URLs اور ای میلز',
+                'description' => 'URLs یا ای میل پتے تبدیل یا حذف کیے گئے: :missing',
+            ],
+            'glossary' => [
+                'label' => 'لغت',
+                'description' => 'لغت کی اصطلاحات لاگو نہیں ہوئیں: :violations',
+                'suggestion' => 'ہر اصطلاح کے لیے منظور شدہ لغت ترجمہ استعمال کریں۔',
+            ],
+        ],
+    ],
+
     'locale' => [
         'invalid_code' => 'غلط زبان کوڈ [:code]۔ متوقع زبان کوڈ جیسے "en"، "pt-BR" یا "zh-Hans"۔',
     ],

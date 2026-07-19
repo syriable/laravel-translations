@@ -94,6 +94,59 @@ return [
         ],
     ],
 
+    'quality' => [
+        'checks' => [
+            'missing_placeholder' => [
+                'label' => 'Missing placeholders',
+                'description' => 'Translation is missing placeholders: :placeholders',
+            ],
+            'unexpected_placeholder' => [
+                'label' => 'Unexpected placeholders',
+                'description' => 'Translation has placeholders not present in the source: :placeholders',
+            ],
+            'plural' => [
+                'label' => 'Plural selectors',
+                'description' => 'Plural selectors do not match the source string.',
+                'suggestion' => 'Keep the same plural selectors (e.g. {1}, [2,*]) in each segment.',
+            ],
+            'inconsistent_plural_selector' => [
+                'label' => 'Inconsistent plural selectors',
+                'description' => 'The source plural string is missing explicit selectors (e.g. {0}, [1,19], [20,*]) on segment(s): :missing.',
+            ],
+            'html_tag_mismatch' => [
+                'label' => 'HTML tags',
+                'description' => 'HTML tags do not match the source string (source: :source; target: :target).',
+            ],
+            'length_ratio' => [
+                'label' => 'Length ratio',
+                'description' => 'Translation length ratio :ratio is outside the expected range (:min–:max).',
+            ],
+            'whitespace' => [
+                'label' => 'Whitespace',
+                'description' => 'Whitespace issue(s): :problems.',
+                'suggestion' => 'Match the source whitespace and collapse repeated spaces.',
+                'problems' => [
+                    'leading_trailing' => 'leading/trailing whitespace',
+                    'double_spaces' => 'double spaces',
+                ],
+            ],
+            'casing' => [
+                'label' => 'Capitalization',
+                'description' => 'The first letter capitalization differs from the source string.',
+                'suggestion' => 'Match the source capitalization.',
+            ],
+            'url_email' => [
+                'label' => 'URLs and emails',
+                'description' => 'URLs or email addresses were altered or dropped: :missing',
+            ],
+            'glossary' => [
+                'label' => 'Glossary',
+                'description' => 'Glossary terms were not applied: :violations',
+                'suggestion' => 'Use the approved glossary translation for each term.',
+            ],
+        ],
+    ],
+
     'locale' => [
         'invalid_code' => 'Invalid locale code [:code]. Expected a language code like "en", "pt-BR" or "zh-Hans".',
     ],

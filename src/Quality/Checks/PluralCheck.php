@@ -38,8 +38,8 @@ class PluralCheck extends Check
         return new Issue(
             $this->key(),
             Severity::Error,
-            'Plural selectors do not match the source string.',
-            'Keep the same plural selectors (e.g. {1}, [2,*]) in each segment.',
+            __('translations::messages.quality.checks.plural.description'),
+            __('translations::messages.quality.checks.plural.suggestion'),
             false,
             [
                 'source' => $this->describe($sourceSelectors),

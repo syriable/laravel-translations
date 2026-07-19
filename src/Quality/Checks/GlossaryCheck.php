@@ -3,6 +3,7 @@
 namespace Syriable\Translations\Quality\Checks;
 
 use Illuminate\Support\Collection;
+use Syriable\Translations\Enums\Severity;
 use Syriable\Translations\Models\Message;
 use Syriable\Translations\Models\Term;
 use Syriable\Translations\Quality\Check;
@@ -45,9 +46,14 @@ class GlossaryCheck extends Check
             return null;
         }
 
-        return Issue::warning(
+        return new Issue(
             $this->key(),
-            'Glossary terms were not applied: '.implode(', ', $violations),
+            Severity::Warning,
+            __('translations::messages.quality.checks.glossary.description', [
+                'violations' => implode(', ', $violations),
+            ]),
+            __('translations::messages.quality.checks.glossary.suggestion'),
+            false,
             ['violations' => $violations],
         );
     }

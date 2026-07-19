@@ -15,6 +15,11 @@ abstract class Check implements QualityCheck
         $this->scanner = new PlaceholderScanner;
     }
 
+    public function label(): string
+    {
+        return __('translations::messages.quality.checks.'.$this->key().'.label');
+    }
+
     public function fixable(): bool
     {
         return false;

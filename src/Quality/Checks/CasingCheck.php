@@ -36,8 +36,8 @@ class CasingCheck extends Check
         return new Issue(
             $this->key(),
             Severity::Info,
-            'The first letter capitalization differs from the source string.',
-            'Match the source capitalization.',
+            __('translations::messages.quality.checks.casing.description'),
+            __('translations::messages.quality.checks.casing.suggestion'),
             true,
         );
     }

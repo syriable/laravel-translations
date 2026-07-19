@@ -35,7 +35,10 @@ class HtmlTagCheck extends Check
 
         return Issue::error(
             $this->key(),
-            'HTML tags do not match the source string.',
+            __('translations::messages.quality.checks.html_tag_mismatch.description', [
+                'source' => implode(', ', $sourceTags),
+                'target' => implode(', ', $targetTags),
+            ]),
             ['source' => $sourceTags, 'target' => $targetTags],
         );
     }

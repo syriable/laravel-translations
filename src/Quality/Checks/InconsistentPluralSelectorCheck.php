@@ -27,7 +27,9 @@ class InconsistentPluralSelectorCheck extends Check
 
         return Issue::warning(
             $this->key(),
-            'The source plural string is missing explicit selectors (e.g. {0}, [1,19], [20,*]) on segment(s): '.implode(', ', $missing).'.',
+            __('translations::messages.quality.checks.inconsistent_plural_selector.description', [
+                'missing' => implode(', ', $missing),
+            ]),
             ['missing_segments' => $missing],
         );
     }
